@@ -4,19 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="base">
+    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="Рабочее">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/decorators.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/forms.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/contractors.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/contractors.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/login.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/views.py" afterDir="false" />
@@ -124,11 +118,20 @@
       <option name="project" value="LOCAL" />
       <updated>1776535684920</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Рабочее">
+      <option name="closed" value="true" />
+      <created>1776537050148</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776537050148</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="base" />
-    <option name="LAST_COMMIT_MESSAGE" value="base" />
+    <MESSAGE value="Рабочее" />
+    <option name="LAST_COMMIT_MESSAGE" value="Рабочее" />
   </component>
 </project>

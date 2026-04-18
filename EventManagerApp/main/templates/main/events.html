@@ -31,6 +31,7 @@
                         <th>Ответственные</th>
                         <th>Участники</th>
                         <th>Задачи</th>
+                        <th>Расходы</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -47,8 +48,10 @@
                             <td>{{ event.employee_names|join:", "|default:"Не назначены" }}</td>
                             <td>{{ event.participant_count }}</td>
                             <td>{{ event.task_count }}</td>
+                            <td>{{ event.expense_total|floatformat:2 }} руб.</td>
                             <td>
                                 <div class="toolbar">
+                                    <a href="{% url 'event_detail' event.pk %}" class="btn btn-secondary">Карточка</a>
                                     <a href="{% url 'participants' %}?event={{ event.pk }}" class="btn btn-secondary">Участники</a>
                                     <a href="{% url 'edit_event' event.pk %}" class="btn btn-secondary">Изменить</a>
                                     <form action="{% url 'delete_event' event.pk %}" method="post" onsubmit="return confirm('Удалить мероприятие?');">
@@ -60,7 +63,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="8" class="empty-state">Мероприятия пока не созданы.</td>
+                            <td colspan="9" class="empty-state">Мероприятия пока не созданы.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

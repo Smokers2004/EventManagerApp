@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
-from .models import Contractor, Employee, Event, Participant, Place, Task
+from .models import Contractor, Employee, Event, Order, Participant, Place, Task
 
 
 class StyledFormMixin:
@@ -47,6 +47,23 @@ class ContractorForm(forms.ModelForm, StyledFormMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.apply_base_styles()
+
+
+class PlaceForm(forms.ModelForm, StyledFormMixin):
+    class Meta:
+        model = Place
+        fields = ["c", "address", "description"]
+        widgets = {
+            "c": forms.Select(),
+            "address": forms.TextInput(attrs={"placeholder": "г. Москва, ул. Тверская, д. 1"}),
+            "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Вместимость, особенности площадки, оснащение"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["c"].queryset = Contractor.objects.all()
+        self.fields["c"].required = False
         self.apply_base_styles()
 
 
@@ -131,7 +148,7 @@ class EventForm(forms.ModelForm, StyledFormMixin):
         self.apply_base_styles()
 
 
-class ParticipantForm(forms.ModelForm, StyledFormMixin):
+class ParticipantForm(forms.Form, StyledFormMixin):
     event = forms.ModelChoiceField(label="Мероприятие", queryset=Event.objects.all())
     fullname = forms.CharField(label="ФИО", required=False)
     gender = forms.ChoiceField(
@@ -146,20 +163,23 @@ class ParticipantForm(forms.ModelForm, StyledFormMixin):
     phone = forms.CharField(label="Телефон", required=False)
     email = forms.EmailField(label="Почта", required=False)
 
-    class Meta:
-        model = Participant
-        fields = []
-
     def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop("instance", None)
         super().__init__(*args, **kwargs)
+        self.fields["event"].queryset = Event.objects.all()
         self.fields["fullname"].widget.attrs["placeholder"] = "Смирнов Алексей Олегович"
         self.fields["phone"].widget.attrs["placeholder"] = "+7 (999) 000-00-00"
         self.fields["email"].widget.attrs["placeholder"] = "participant@example.com"
-        current_gender = self.instance.gender if self.instance.pk else None
-        if current_gender in (Participant.GENDER_MALE, memoryview(Participant.GENDER_MALE)):
-            self.initial["gender"] = "male"
-        elif current_gender in (Participant.GENDER_FEMALE, memoryview(Participant.GENDER_FEMALE)):
-            self.initial["gender"] = "female"
+        if self.instance is not None:
+            self.initial.setdefault("event", self.instance.event_id)
+            self.initial.setdefault("fullname", self.instance.fullname)
+            self.initial.setdefault("phone", self.instance.phone)
+            self.initial.setdefault("email", self.instance.email)
+            current_gender = self.instance.gender
+            if current_gender in (Participant.GENDER_MALE, memoryview(Participant.GENDER_MALE)):
+                self.initial["gender"] = "male"
+            elif current_gender in (Participant.GENDER_FEMALE, memoryview(Participant.GENDER_FEMALE)):
+                self.initial["gender"] = "female"
         self.apply_base_styles()
 
     def clean_gender(self):
@@ -171,7 +191,7 @@ class ParticipantForm(forms.ModelForm, StyledFormMixin):
         return None
 
     def save(self, commit=True):
-        participant = self.instance if self.instance.pk else Participant()
+        participant = self.instance if self.instance is not None else Participant()
         participant.event = self.cleaned_data["event"]
         participant.fullname = self.cleaned_data["fullname"]
         participant.gender = self.cleaned_data["gender"]
@@ -207,3 +227,23 @@ class TaskForm(forms.ModelForm, StyledFormMixin):
         if commit:
             task.save()
         return task
+
+
+class OrderForm(forms.ModelForm, StyledFormMixin):
+    class Meta:
+        model = Order
+        fields = ["event", "c", "product", "quantity", "price", "date"]
+        widgets = {
+            "event": forms.Select(),
+            "c": forms.Select(),
+            "product": forms.TextInput(attrs={"placeholder": "Аренда оборудования / услуги кейтеринга"}),
+            "quantity": forms.NumberInput(attrs={"min": 1, "step": 1}),
+            "price": forms.NumberInput(attrs={"min": 0, "step": "0.01"}),
+            "date": forms.TextInput(attrs={"placeholder": "20.05.2026"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["event"].queryset = Event.objects.all()
+        self.fields["c"].queryset = Contractor.objects.all()
+        self.apply_base_styles()

@@ -1,0 +1,98 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}Карточка мероприятия{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">{{ event.title }}</h1>
+            <p class="page-subtitle">Карточка мероприятия со сводной информацией, назначенными сотрудниками и расходами.</p>
+        </div>
+        <div class="toolbar">
+            <a href="{% url 'add_expense' %}?event={{ event.pk }}" class="btn btn-primary">Добавить расход</a>
+            <a href="{% url 'edit_event' event.pk %}" class="btn btn-secondary">Редактировать</a>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <article class="stats-card">
+            <div class="stats-label">Статус</div>
+            <div class="stats-value" style="font-size:24px;">{{ event.status }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Дата и время</div>
+            <div class="stats-value" style="font-size:24px;">{{ event.time|default:"—" }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Участники</div>
+            <div class="stats-value">{{ participants_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Задачи</div>
+            <div class="stats-value">{{ tasks_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Сумма расходов</div>
+            <div class="stats-value" style="font-size:24px;">{{ expense_total|floatformat:2 }}</div>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="card panel">
+            <h2 class="panel-title">Общая информация</h2>
+            <div class="stack">
+                <div><strong>Площадка:</strong> {{ event.p.address|default:"Не указана" }}</div>
+                <div><strong>Описание:</strong> {{ event.description|default:"Не заполнено" }}</div>
+                <div><strong>Ответственные:</strong> {{ employees|join:", "|default:"Не назначены" }}</div>
+            </div>
+        </article>
+
+        <article class="card panel">
+            <h2 class="panel-title">Быстрые действия</h2>
+            <div class="toolbar">
+                <a href="{% url 'participants' %}?event={{ event.pk }}" class="btn btn-secondary">Участники</a>
+                <a href="{% url 'tasks' %}?event={{ event.pk }}" class="btn btn-secondary">Задачи</a>
+                <a href="{% url 'expenses' %}?event={{ event.pk }}" class="btn btn-secondary">Все расходы</a>
+            </div>
+        </article>
+    </section>
+
+    <section class="table-card" style="margin-top:24px;">
+        <div class="panel">
+            <h2 class="panel-title">Расходы мероприятия</h2>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Контрагент</th>
+                        <th>Товар/услуга</th>
+                        <th>Количество</th>
+                        <th>Цена за единицу</th>
+                        <th>Дата</th>
+                        <th>Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                        <tr>
+                            <td>{{ expense.c.name }}</td>
+                            <td>{{ expense.product }}</td>
+                            <td>{{ expense.quantity }}</td>
+                            <td>{{ expense.price|floatformat:2 }} руб.</td>
+                            <td>{{ expense.date }}</td>
+                            <td>{{ expense.total_cost|floatformat:2 }} руб.</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="empty-state">По мероприятию пока нет расходов.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <strong>Итого: {{ expense_total|floatformat:2 }} руб.</strong>
+        </div>
+    </section>
+{% endblock %}

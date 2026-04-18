@@ -101,6 +101,8 @@ class Employee(AbstractBaseUser, PermissionsMixin):
 
     @property
     def role_label(self):
+        if self.is_superuser and not self.position:
+            return "Администратор"
         return dict(self.ROLE_CHOICES).get(self.position, self.position)
 
     @property
@@ -113,7 +115,7 @@ class Employee(AbstractBaseUser, PermissionsMixin):
 
     @property
     def can_generate_reports(self):
-        return self.position in {self.ROLE_ADMIN, self.ROLE_TEAMLEAD}
+        return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_TEAMLEAD}
 
 
 class EmployeeOnEvent(models.Model):

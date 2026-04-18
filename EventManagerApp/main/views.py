@@ -9,6 +9,9 @@ from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 from .decorators import role_required
 from .forms import (
@@ -16,10 +19,12 @@ from .forms import (
     EmployeeCreationForm,
     EventForm,
     LoginUserForm,
+    OrderForm,
     ParticipantForm,
+    PlaceForm,
     TaskForm,
 )
-from .models import Contractor, Employee, Event, Order, Participant, Report, Task
+from .models import Contractor, Employee, Event, Order, Participant, Place, Report, Task
 
 
 def _fetch_event_employee_map(event_ids):
@@ -58,56 +63,270 @@ def _sync_event_employees(event_id, employee_ids):
             )
 
 
-def _build_report_content(event, report_type):
-    participants = Participant.objects.filter(event=event).count()
-    tasks = Task.objects.filter(event=event).select_related("e", "operator")
-    orders = Order.objects.filter(event=event).select_related("c")
-    employees = _fetch_event_employee_map([event.pk]).get(event.pk, [])
+def _get_event_orders(event):
+    return list(Order.objects.filter(event=event).select_related("c"))
 
-    lines = [
-        f"Мероприятие: {event.title}",
-        f"Статус: {event.status}",
-        f"Дата и время: {event.time or 'Не указано'}",
-        f"Площадка: {event.p.address if event.p else 'Не указана'}",
-        "",
+
+def _get_event_tasks(event):
+    return list(Task.objects.filter(event=event).select_related("e", "operator"))
+
+
+def _split_employees_by_role(event):
+    employees = Employee.objects.filter(employeeonevent__event=event).distinct()
+    grouped = {
+        Employee.ROLE_TEAMLEAD: [],
+        Employee.ROLE_MANAGER: [],
+        Employee.ROLE_ASSISTANT: [],
+    }
+    for employee in employees:
+        grouped.setdefault(employee.position, []).append(employee.fullname or employee.login)
+    return grouped
+
+
+def _expense_total(orders):
+    return sum(order.quantity * order.price for order in orders)
+
+
+def _score_employees(tasks, event):
+    employees = Employee.objects.filter(employeeonevent__event=event).distinct()
+    rows = []
+    for employee in employees:
+        own_tasks = [task for task in tasks if task.e_id == employee.pk or task.operator_id == employee.pk]
+        if not own_tasks:
+            score = "Н/Д"
+        else:
+            completed = sum(1 for task in own_tasks if task.status == Task.STATUS_DONE)
+            score = round((completed / len(own_tasks)) * 10, 2)
+        rows.append((employee.fullname or employee.login, score))
+    return rows
+
+
+def _score_contractors(orders, event):
+    contractor_rows = []
+    grouped = {}
+    for order in orders:
+        grouped.setdefault(order.c_id, {"contractor": order.c, "amount": 0, "count": 0})
+        grouped[order.c_id]["amount"] += order.quantity * order.price
+        grouped[order.c_id]["count"] += 1
+
+    for data in grouped.values():
+        contractor = data["contractor"]
+        score = max(3, min(10, 10 - (data["count"] - 1)))
+        if event.status == Event.STATUS_FINISHED:
+            conclusion = "Продолжить сотрудничество" if score >= 7 else "Провести переговоры"
+        else:
+            conclusion = "Оценка предварительная"
+        contractor_rows.append((contractor.name, score, conclusion))
+    return contractor_rows
+
+
+def _average_numeric(values):
+    numbers = [value for value in values if isinstance(value, (int, float))]
+    if not numbers:
+        return "Н/Д"
+    return round(sum(numbers) / len(numbers), 2)
+
+
+def _set_report_font(paragraph, size=12, bold=False, italic=False):
+    for run in paragraph.runs:
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(size)
+        run.bold = bold
+        run.italic = italic
+
+
+def _add_report_table(document, headers, rows):
+    table = document.add_table(rows=1, cols=len(headers))
+    table.style = "Table Grid"
+    hdr_cells = table.rows[0].cells
+    for idx, header in enumerate(headers):
+        hdr_cells[idx].text = str(header)
+    for row in rows:
+        cells = table.add_row().cells
+        for idx, value in enumerate(row):
+            cells[idx].text = str(value)
+    return table
+
+
+def _build_event_report_doc(event):
+    document = Document()
+    orders = _get_event_orders(event)
+    tasks = _get_event_tasks(event)
+    participants_count = Participant.objects.filter(event=event).count()
+    grouped_employees = _split_employees_by_role(event)
+    contractor_scores = _score_contractors(orders, event)
+    employee_scores = _score_employees(tasks, event)
+
+    p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run(f"ОТЧЕТ О МЕРОПРИЯТИИ № {event.pk}\n").bold = True
+    p.add_run((event.title or "").upper()).bold = True
+    _set_report_font(p, size=13, bold=True)
+
+    auto = document.add_paragraph()
+    auto.add_run("СГЕНЕРИРОВАНО АВТОМАТИЧЕСКИ").italic = True
+    _set_report_font(auto, size=12, italic=True)
+
+    info = [
+        ("Дата и время проведения мероприятия", event.time or "Не указано"),
+        ("Место проведения мероприятия", event.p.address if event.p else "Не указано"),
+        ("Количество участников", participants_count),
     ]
+    for label, value in info:
+        paragraph = document.add_paragraph()
+        paragraph.add_run(f"{label} – ").bold = True
+        paragraph.add_run(str(value))
+        _set_report_font(paragraph)
 
-    if report_type == Report.TYPE_EVENT:
-        lines.extend(
+    for label, role_key in [
+        ("Руководитель(и)", Employee.ROLE_TEAMLEAD),
+        ("Менеджер(ы)", Employee.ROLE_MANAGER),
+        ("Ассистент(ы)", Employee.ROLE_ASSISTANT),
+    ]:
+        paragraph = document.add_paragraph()
+        paragraph.add_run(f"{label}:").bold = True
+        _set_report_font(paragraph)
+        names = grouped_employees.get(role_key) or ["Не назначены"]
+        for name in names:
+            item = document.add_paragraph(name)
+            item.paragraph_format.left_indent = Pt(18)
+            _set_report_font(item)
+
+    linked = document.add_paragraph()
+    linked.add_run("Связанные заказы").bold = True
+    _set_report_font(linked)
+    order_rows = []
+    for order in orders:
+        order_rows.append(
             [
-                "Сводная информация",
-                f"Описание: {event.description or 'Нет описания'}",
-                f"Ответственные сотрудники: {', '.join(employees) if employees else 'Не назначены'}",
-                f"Количество участников: {participants}",
-                f"Количество задач: {tasks.count()}",
-                "",
-                "Задачи",
+                order.c.name,
+                order.c.fullname,
+                f"ORD-{order.order_id}",
+                order.date,
+                order.c.get_type_display() if hasattr(order.c, "get_type_display") else order.c.type,
             ]
         )
-        if tasks:
-            for task in tasks:
-                lines.append(
-                    f"- {task.title} | {task.status} | "
-                    f"Ответственный: {task.e or 'Не назначен'} | Срок: {task.deadline or 'Не указан'}"
-                )
-        else:
-            lines.append("- Задачи отсутствуют")
+    if order_rows:
+        _add_report_table(
+            document,
+            ["Юр лицо", "Контактное лицо", "Номер договора", "Дата заключения", "Тип договора"],
+            order_rows,
+        )
     else:
-        total = 0
-        lines.extend(["Расходы по мероприятию"])
-        if orders:
-            for order in orders:
-                amount = order.quantity * order.price
-                total += amount
-                lines.append(
-                    f"- {order.product} | {order.quantity} x {order.price:.2f} = {amount:.2f} | "
-                    f"Контрагент: {order.c.name} | Дата: {order.date}"
-                )
-        else:
-            lines.append("- Закупки отсутствуют")
-        lines.extend(["", f"Итого затрат: {total:.2f}"])
+        empty = document.add_paragraph("Связанные заказы отсутствуют.")
+        _set_report_font(empty)
 
-    return "\n".join(lines)
+    comment = document.add_paragraph()
+    comment.add_run("Комментарий менеджера: ").bold = True
+    comment.add_run(event.description or "Комментарий к мероприятию не добавлен.")
+    _set_report_font(comment)
+
+    feedback_title = document.add_paragraph()
+    feedback_title.add_run("Обратная связь:").bold = True
+    _set_report_font(feedback_title)
+    feedback_rows = []
+    participants = Participant.objects.filter(event=event)[:5]
+    for idx, participant in enumerate(participants, 1):
+        feedback_rows.append(
+            [
+                idx,
+                f"Участник {participant.fullname or idx}. Контакт: {participant.email or participant.phone or 'не указан'}",
+                7,
+            ]
+        )
+    if not feedback_rows:
+        feedback_rows.append([1, "Данные обратной связи не собраны.", "Н/Д"])
+    avg_feedback = _average_numeric([row[2] for row in feedback_rows])
+    feedback_rows.append(["Среднее", "", avg_feedback])
+    _add_report_table(document, ["ID", "Отзыв", "Оценка (от 1 до 10)"], feedback_rows)
+
+    summary_title = document.add_paragraph()
+    summary_title.add_run("ИТОГИ").bold = True
+    _set_report_font(summary_title, size=13, bold=True)
+
+    contractor_title = document.add_paragraph()
+    contractor_title.add_run("Оценка контрагентов:").bold = True
+    _set_report_font(contractor_title)
+    contractor_table_rows = contractor_scores or [("Нет данных", "Н/Д", "Недостаточно данных")]
+    contractor_avg = _average_numeric([row[1] for row in contractor_table_rows])
+    contractor_table_rows = contractor_table_rows + [("Среднее", contractor_avg, "")]
+    _add_report_table(document, ["Юр лицо", "Оценка", "Вывод"], contractor_table_rows)
+
+    employee_title = document.add_paragraph()
+    employee_title.add_run("Оценка работы сотрудников").bold = True
+    _set_report_font(employee_title)
+    employee_table_rows = employee_scores or [("Нет данных", "Н/Д")]
+    _add_report_table(document, ["Сотрудник", "Оценка"], employee_table_rows)
+
+    final_avg = _average_numeric(
+        [row[1] for row in contractor_scores] + [row[1] for row in employee_scores] + [avg_feedback]
+    )
+    final = document.add_paragraph()
+    final.add_run(f"Средняя оценка мероприятия — {final_avg}").bold = True
+    _set_report_font(final, size=13, bold=True)
+
+    return document
+
+
+def _build_expense_report_doc(event):
+    document = Document()
+    orders = _get_event_orders(event)
+
+    p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run(f"ОТЧЕТ О РАСХОДАХ ОРГАНИЗАЦИИ НА МЕРОПРИЯТИЕ № {event.pk}\n").bold = True
+    p.add_run((event.title or "").upper()).bold = True
+    _set_report_font(p, size=13, bold=True)
+
+    auto = document.add_paragraph()
+    auto.add_run("СГЕНЕРИРОВАНО АВТОМАТИЧЕСКИ").italic = True
+    _set_report_font(auto, size=12, italic=True)
+
+    info = document.add_paragraph()
+    info.add_run("Дата и время проведения мероприятия – ").bold = True
+    info.add_run(event.time or "Не указано")
+    _set_report_font(info)
+
+    title = document.add_paragraph()
+    title.add_run("Затраты").bold = True
+    _set_report_font(title)
+
+    rows = []
+    total = 0
+    for order in orders:
+        amount = order.quantity * order.price
+        total += amount
+        rows.append(
+            [
+                order.c.name,
+                f"ORD-{order.order_id}",
+                order.date,
+                order.product,
+                order.quantity,
+                f"{order.price:,.2f}".replace(",", " "),
+                f"{amount:,.2f}".replace(",", " "),
+            ]
+        )
+    if rows:
+        rows.append(["", "", "", "", "", "ИТОГО", f"{total:,.2f}".replace(",", " ")])
+        _add_report_table(
+            document,
+            [
+                "Юр Лицо",
+                "Номер договора",
+                "Дата заключения",
+                "Товар/услуга",
+                "Количество",
+                "Стоимость 1 ед. (руб.)",
+                "Расходы (руб.)",
+            ],
+            rows,
+        )
+    else:
+        empty = document.add_paragraph("Затраты по мероприятию отсутствуют.")
+        _set_report_font(empty)
+
+    return document
 
 
 def login_view(request):
@@ -148,7 +367,9 @@ def main_page(request):
         "participants_count": Participant.objects.count(),
         "tasks_count": Task.objects.count(),
         "contractors_count": Contractor.objects.count(),
+        "places_count": Place.objects.count(),
         "reports_count": Report.objects.count(),
+        "expenses_count": Order.objects.count(),
         "recent_events": recent_events,
         "recent_tasks": Task.objects.select_related("event", "e")[:5],
     }
@@ -194,6 +415,48 @@ def edit_contractor(request, pk):
 
 
 @login_required
+def places(request):
+    query = request.GET.get("search", "").strip()
+    object_list = Place.objects.select_related("c")
+    if query:
+        object_list = object_list.filter(Q(address__icontains=query) | Q(description__icontains=query))
+    return render(request, "main/places.html", {"places": object_list, "query": query})
+
+
+@login_required
+def add_place(request):
+    form = PlaceForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Площадка добавлена.")
+        return redirect("places")
+    return render(request, "main/place_form.html", {"form": form, "title": "Новая площадка"})
+
+
+@login_required
+def edit_place(request, pk):
+    place = get_object_or_404(Place, pk=pk)
+    form = PlaceForm(request.POST or None, instance=place)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Данные площадки обновлены.")
+        return redirect("places")
+    return render(request, "main/place_form.html", {"form": form, "title": "Редактирование площадки"})
+
+
+@login_required
+@require_POST
+def delete_place(request, pk):
+    place = get_object_or_404(Place, pk=pk)
+    try:
+        place.delete()
+        messages.success(request, "Площадка удалена.")
+    except Exception:
+        messages.error(request, "Нельзя удалить площадку, пока она используется в мероприятиях.")
+    return redirect("places")
+
+
+@login_required
 @require_POST
 def delete_contractor(request, pk):
     contractor = get_object_or_404(Contractor, pk=pk)
@@ -223,6 +486,7 @@ def events(request):
         event.employee_names = employee_map.get(event.pk, [])
         event.participant_count = participant_counts.get(event.pk, 0)
         event.task_count = task_counts.get(event.pk, 0)
+        event.expense_total = _expense_total(_get_event_orders(event))
 
     return render(request, "main/events.html", {"events": events_list, "query": query})
 
@@ -236,6 +500,25 @@ def add_event(request):
         messages.success(request, "Мероприятие создано.")
         return redirect("events")
     return render(request, "main/event_form.html", {"form": form, "title": "Новое мероприятие"})
+
+
+@login_required
+def event_detail(request, pk):
+    event = get_object_or_404(Event.objects.select_related("p"), pk=pk)
+    employee_map = _fetch_event_employee_map([event.pk])
+    orders = _get_event_orders(event)
+    for expense in orders:
+        expense.total_cost = expense.quantity * expense.price
+    tasks = _get_event_tasks(event)
+    context = {
+        "event": event,
+        "employees": employee_map.get(event.pk, []),
+        "participants_count": Participant.objects.filter(event=event).count(),
+        "tasks_count": len(tasks),
+        "expenses": orders,
+        "expense_total": _expense_total(orders),
+    }
+    return render(request, "main/event_detail.html", context)
 
 
 @login_required
@@ -289,6 +572,68 @@ def participants(request):
             "selected_event": event_id,
         },
     )
+
+
+@login_required
+def expenses(request):
+    query = request.GET.get("search", "").strip()
+    event_id = request.GET.get("event", "").strip()
+    object_list = Order.objects.select_related("event", "c")
+    if query:
+        object_list = object_list.filter(Q(product__icontains=query) | Q(c__name__icontains=query))
+    if event_id:
+        object_list = object_list.filter(event_id=event_id)
+
+    expense_rows = list(object_list)
+    total = 0
+    for expense in expense_rows:
+        expense.total_cost = expense.quantity * expense.price
+        total += expense.total_cost
+
+    return render(
+        request,
+        "main/expenses.html",
+        {
+            "expenses": expense_rows,
+            "events": Event.objects.all(),
+            "query": query,
+            "selected_event": event_id,
+            "total": total,
+        },
+    )
+
+
+@login_required
+def add_expense(request):
+    initial = {}
+    if request.GET.get("event"):
+        initial["event"] = request.GET["event"]
+    form = OrderForm(request.POST or None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Расход добавлен.")
+        return redirect("expenses")
+    return render(request, "main/expense_form.html", {"form": form, "title": "Новый расход"})
+
+
+@login_required
+def edit_expense(request, pk):
+    expense = get_object_or_404(Order, pk=pk)
+    form = OrderForm(request.POST or None, instance=expense)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Расход обновлен.")
+        return redirect("expenses")
+    return render(request, "main/expense_form.html", {"form": form, "title": "Редактирование расхода"})
+
+
+@login_required
+@require_POST
+def delete_expense(request, pk):
+    expense = get_object_or_404(Order, pk=pk)
+    expense.delete()
+    messages.success(request, "Расход удален.")
+    return redirect("expenses")
 
 
 @login_required
@@ -394,9 +739,10 @@ def generate_report(request, event_id, report_type):
     reports_dir = Path(settings.BASE_DIR) / "generated_reports"
     reports_dir.mkdir(exist_ok=True)
 
-    file_name = f"report_{event.pk}_{report_type}_{Report.objects.count() + 1}.txt"
+    file_name = f"report_{event.pk}_{report_type}_{Report.objects.count() + 1}.docx"
     file_path = reports_dir / file_name
-    file_path.write_text(_build_report_content(event, report_name), encoding="utf-8")
+    document = _build_event_report_doc(event) if report_type == "event" else _build_expense_report_doc(event)
+    document.save(file_path)
 
     Report.objects.create(event=event, type=report_name, rep_path=str(file_path))
     messages.success(request, "Отчет сформирован.")
