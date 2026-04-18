@@ -1,0 +1,39 @@
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .login-input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 50px;
+        border: 1px solid #ddd;
+        outline: none;
+    }
+    .btn-login {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 12px 40px;
+        border-radius: 50px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="login-container">
+    <h2>Вход в систему</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="login" class="login-input" placeholder="Логин" required>
+        <input type="password" name="password" class="login-input" placeholder="Пароль" required>
+        <button type="submit" class="btn-login">Войти</button>
+    </form>
+</div>

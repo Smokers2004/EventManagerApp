@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить контрагента</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #28a745;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        /* Минималистичная округлая зеленая кнопка */
+        .submit-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 14px 50px;
+            border-radius: 50px; /* Полностью округлая */
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        }
+        .submit-btn:hover {
+            background-color: #218838;
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+            transform: translateY(-2px);
+        }
+        .back-btn {
+            background-color: #D6D9E2;
+            color: white;
+            border: none;
+            padding: 14px 50px;
+            border-radius: 50px; /* Полностью округлая */
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        }
+        .back-btn:hover {
+            background-color: #218838;
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <h2>Новый контрагент</h2>
+    <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <p style="color: red; font-size: 12px;">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="btn-container">
+            <button type="submit" class="submit-btn">Подтвердить</button>
+        </div>
+        <div class="btn-container">
+            <button type="button" class="back-btn">Отмена</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>
