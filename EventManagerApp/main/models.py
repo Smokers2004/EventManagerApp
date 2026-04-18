@@ -117,6 +117,10 @@ class Employee(AbstractBaseUser, PermissionsMixin):
     def can_generate_reports(self):
         return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_TEAMLEAD}
 
+    @property
+    def can_delete_tasks(self):
+        return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_TEAMLEAD}
+
 
 class EmployeeOnEvent(models.Model):
     e = models.ForeignKey(Employee, models.DO_NOTHING, db_column="e_id")

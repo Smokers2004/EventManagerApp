@@ -6,7 +6,7 @@
     <section class="page-head">
         <div>
             <h1 class="page-title">Пользователи</h1>
-            <p class="page-subtitle">Администратор может просматривать сотрудников, добавлять новые учетные записи и изменять данные существующих пользователей.</p>
+            <p class="page-subtitle">Администратор может просматривать сотрудников, добавлять новые учетные записи, изменять данные и удалять пользователей.</p>
         </div>
         <a href="{% url 'add_employee' %}" class="btn btn-primary">Добавить пользователя</a>
     </section>
@@ -47,7 +47,17 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{% url 'edit_employee' employee.pk %}" class="btn btn-secondary">Изменить</a>
+                                <div class="toolbar">
+                                    <a href="{% url 'edit_employee' employee.pk %}" class="btn btn-secondary">Изменить</a>
+                                    {% if employee.pk != request.user.pk %}
+                                        <form action="{% url 'delete_employee' employee.pk %}" method="post" onsubmit="return confirm('Удалить пользователя?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="muted">Текущий аккаунт</span>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                     {% empty %}

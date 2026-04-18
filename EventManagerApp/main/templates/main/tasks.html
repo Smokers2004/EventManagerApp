@@ -54,10 +54,12 @@
                             <td>
                                 <div class="toolbar">
                                     <a href="{% url 'edit_task' task.pk %}" class="btn btn-secondary">Изменить</a>
-                                    <form action="{% url 'delete_task' task.pk %}" method="post" onsubmit="return confirm('Удалить задачу?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger">Удалить</button>
-                                    </form>
+                                    {% if request.user.can_delete_tasks %}
+                                        <form action="{% url 'delete_task' task.pk %}" method="post" onsubmit="return confirm('Удалить задачу?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

@@ -7,12 +7,14 @@
     <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="Рабочее">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/generated_reports/~$port_1_event_3.docx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/forms.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employee_form.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employee_form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/static/main/css/app.css" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/static/main/css/app.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employees.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employees.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/event_detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/event_detail.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/views.py" afterDir="false" />
     </list>
@@ -135,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776538661794</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Рабочее">
+      <option name="closed" value="true" />
+      <created>1776539400931</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1776539400931</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

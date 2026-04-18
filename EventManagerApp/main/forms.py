@@ -205,6 +205,19 @@ class EventForm(forms.ModelForm, StyledFormMixin):
         self.apply_base_styles()
 
 
+class EventEmployeeBindingForm(forms.Form, StyledFormMixin):
+    employees = forms.ModelMultipleChoiceField(
+        label="Сотрудники мероприятия",
+        queryset=Employee.objects.filter(is_active=True),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_base_styles()
+
+
 class ParticipantForm(forms.Form, StyledFormMixin):
     event = forms.ModelChoiceField(label="Мероприятие", queryset=Event.objects.all())
     fullname = forms.CharField(label="ФИО", required=False)

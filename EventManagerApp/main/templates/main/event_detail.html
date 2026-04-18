@@ -43,7 +43,7 @@
             <div class="stack">
                 <div><strong>Площадка:</strong> {{ event.p.address|default:"Не указана" }}</div>
                 <div><strong>Описание:</strong> {{ event.description|default:"Не заполнено" }}</div>
-                <div><strong>Ответственные:</strong> {{ employees|join:", "|default:"Не назначены" }}</div>
+                <div><strong>Привязанные пользователи:</strong> {{ employees|join:", "|default:"Не назначены" }}</div>
             </div>
         </article>
 
@@ -55,6 +55,36 @@
                 <a href="{% url 'expenses' %}?event={{ event.pk }}" class="btn btn-secondary">Все расходы</a>
             </div>
         </article>
+    </section>
+
+    <section class="form-card panel" style="margin-top:24px;">
+        <h2 class="panel-title">Привязка пользователей к мероприятию</h2>
+        <p class="muted" style="margin-bottom: 16px;">Отметьте сотрудников, которые должны быть связаны с мероприятием, и сохраните список.</p>
+        <form method="post" action="{% url 'bind_event_employees' event.pk %}" class="stack">
+            {% csrf_token %}
+            <div class="checkbox-list">
+                {% for employee in binding_form.fields.employees.queryset %}
+                    <label for="event-employee-{{ employee.pk }}" class="{% if employee.pk in selected_employee_ids %}selected{% endif %}">
+                        <input
+                            type="checkbox"
+                            id="event-employee-{{ employee.pk }}"
+                            name="employees"
+                            value="{{ employee.pk }}"
+                            {% if employee.pk in selected_employee_ids %}checked{% endif %}
+                        >
+                        <span>{{ employee.fullname|default:employee.login }} • {{ employee.role_label }}</span>
+                    </label>
+                {% empty %}
+                    <div class="empty-state">Нет активных пользователей для привязки.</div>
+                {% endfor %}
+            </div>
+            {% if binding_form.employees.errors %}
+                <div class="errors">{{ binding_form.employees.errors|join:', ' }}</div>
+            {% endif %}
+            <div class="toolbar">
+                <button type="submit" class="btn btn-primary">Сохранить привязку</button>
+            </div>
+        </form>
     </section>
 
     <section class="table-card" style="margin-top:24px;">

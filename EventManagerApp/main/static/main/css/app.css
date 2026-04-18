@@ -235,6 +235,39 @@ textarea:focus {
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.checkbox-list input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+.checkbox-list label span {
+    color: var(--text);
+    transition: color 0.2s ease, font-weight 0.2s ease;
+}
+
+.checkbox-list label:hover {
+    border-color: rgba(47, 143, 70, 0.45);
+    background: #f1f8f2;
+}
+
+.checkbox-list label.selected,
+.checkbox-list label:has(input[type="checkbox"]:checked) {
+    background: #ebf7ee;
+    border-color: rgba(47, 143, 70, 0.7);
+    box-shadow: 0 0 0 3px rgba(47, 143, 70, 0.12);
+}
+
+.checkbox-list label.selected span,
+.checkbox-list label:has(input[type="checkbox"]:checked) span {
+    color: var(--primary-dark);
+    font-weight: 600;
 }
 
 .field-grid {

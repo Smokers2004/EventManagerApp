@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,6 +18,7 @@ from .decorators import role_required
 from .forms import (
     ContractorForm,
     EmployeeCreationForm,
+    EventEmployeeBindingForm,
     EmployeeUpdateForm,
     EventForm,
     LoginUserForm,
@@ -149,6 +150,17 @@ def _add_report_table(document, headers, rows):
         for idx, value in enumerate(row):
             cells[idx].text = str(value)
     return table
+
+
+def _delete_report_file(rep_path):
+    if not rep_path:
+        return
+    report_file = Path(rep_path)
+    try:
+        if report_file.exists() and report_file.is_file():
+            report_file.unlink()
+    except OSError:
+        pass
 
 
 def _build_event_report_doc(event):
@@ -510,19 +522,37 @@ def add_event(request):
 def event_detail(request, pk):
     event = get_object_or_404(Event.objects.select_related("p"), pk=pk)
     employee_map = _fetch_event_employee_map([event.pk])
+    selected_employee_ids = _fetch_selected_employee_ids(event.pk)
     orders = _get_event_orders(event)
     for expense in orders:
         expense.total_cost = expense.quantity * expense.price
     tasks = _get_event_tasks(event)
+    binding_form = EventEmployeeBindingForm(initial={"employees": selected_employee_ids})
     context = {
         "event": event,
         "employees": employee_map.get(event.pk, []),
+        "binding_form": binding_form,
+        "selected_employee_ids": selected_employee_ids,
         "participants_count": Participant.objects.filter(event=event).count(),
         "tasks_count": len(tasks),
         "expenses": orders,
         "expense_total": _expense_total(orders),
     }
     return render(request, "main/event_detail.html", context)
+
+
+@login_required
+@require_POST
+def bind_event_employees(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    form = EventEmployeeBindingForm(request.POST)
+    if form.is_valid():
+        employee_ids = list(form.cleaned_data["employees"].values_list("pk", flat=True))
+        _sync_event_employees(event.pk, employee_ids)
+        messages.success(request, "Пользователи привязаны к мероприятию.")
+    else:
+        messages.error(request, "Не удалось сохранить привязку пользователей.")
+    return redirect("event_detail", pk=event.pk)
 
 
 @login_required
@@ -542,16 +572,33 @@ def edit_event(request, pk):
 @require_POST
 def delete_event(request, pk):
     event = get_object_or_404(Event, pk=pk)
+    report_paths = list(
+        Report.objects.filter(event_id=pk).values_list("rep_path", flat=True)
+    )
+
     try:
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM employee_on_event WHERE event_id = %s", [pk])
-        event.delete()
+        with transaction.atomic():
+            Task.objects.filter(event_id=pk).delete()
+            Participant.objects.filter(event_id=pk).delete()
+            Order.objects.filter(event_id=pk).delete()
+            Report.objects.filter(event_id=pk).delete()
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM employee_on_event WHERE event_id = %s", [pk])
+            event.delete()
+
         messages.success(request, "Мероприятие удалено.")
     except Exception:
         messages.error(
             request,
-            "Не удалось удалить мероприятие. Сначала удалите связанные задачи, участников, отчеты и закупки.",
+            "Не удалось удалить мероприятие вместе со связанными данными.",
         )
+        return redirect("events")
+
+    for rep_path in report_paths:
+        # The event is already deleted from the database; a locked file
+        # should not turn the whole operation into a visible failure.
+        _delete_report_file(rep_path)
+
     return redirect("events")
 
 
@@ -785,6 +832,8 @@ def edit_task(request, pk):
 @login_required
 @require_POST
 def delete_task(request, pk):
+    if not request.user.can_delete_tasks:
+        return HttpResponseForbidden("Недостаточно прав.")
     task = get_object_or_404(Task, pk=pk)
     task.delete()
     messages.success(request, "Задача удалена.")
@@ -796,6 +845,20 @@ def reports(request):
     object_list = Report.objects.select_related("event")
     events_list = Event.objects.all()
     return render(request, "main/reports.html", {"reports": object_list, "events": events_list})
+
+
+@login_required
+@require_POST
+def delete_report(request, pk):
+    if not request.user.can_generate_reports:
+        return HttpResponseForbidden("Недостаточно прав.")
+
+    report = get_object_or_404(Report, pk=pk)
+    rep_path = report.rep_path
+    report.delete()
+    _delete_report_file(rep_path)
+    messages.success(request, "Отчет удален из системы и с компьютера.")
+    return redirect("reports")
 
 
 @login_required
@@ -855,3 +918,29 @@ def edit_employee(request, pk):
             "is_edit_mode": True,
         },
     )
+
+
+@role_required(Employee.ROLE_ADMIN)
+@require_POST
+def delete_employee(request, pk):
+    employee = get_object_or_404(Employee, pk=pk)
+
+    if employee.pk == request.user.pk:
+        messages.error(request, "Нельзя удалить собственный аккаунт.")
+        return redirect("employees")
+
+    try:
+        with transaction.atomic():
+            Message.objects.filter(Q(sender_id=employee.pk) | Q(receiver_id=employee.pk)).delete()
+            Task.objects.filter(e_id=employee.pk).update(e=None)
+            Task.objects.filter(operator_id=employee.pk).update(operator=request.user)
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM employee_on_event WHERE e_id = %s", [employee.pk])
+                cursor.execute("DELETE FROM employee_groups WHERE employee_id = %s", [employee.pk])
+                cursor.execute("DELETE FROM employee_user_permissions WHERE employee_id = %s", [employee.pk])
+            employee.delete()
+        messages.success(request, "Пользователь удален.")
+    except Exception:
+        messages.error(request, "Не удалось удалить пользователя.")
+
+    return redirect("employees")
