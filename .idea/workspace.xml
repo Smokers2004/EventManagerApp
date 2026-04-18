@@ -4,27 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/EventManagerApp.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/decorators.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/forms.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/static/main/css/add_contractor.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/add_contractor.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/contractors.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/login.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/test.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/EventManagerApp/main/urls.py" afterDir="false" />
+    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="base">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/decorators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/forms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/contractors.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/contractors.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,6 +108,27 @@
       <option name="presentableId" value="Default" />
       <updated>1776239923812</updated>
     </task>
+    <task id="LOCAL-00001" summary="base">
+      <option name="closed" value="true" />
+      <created>1776533181636</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776533181636</updated>
+    </task>
+    <task id="LOCAL-00002" summary="base">
+      <option name="closed" value="true" />
+      <created>1776535684920</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776535684920</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="base" />
+    <option name="LAST_COMMIT_MESSAGE" value="base" />
   </component>
 </project>

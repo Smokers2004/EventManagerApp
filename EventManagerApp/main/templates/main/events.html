@@ -1,9 +1,70 @@
 {% extends 'main/website_headers.html' %}
 
-{% block title %}
-События
-{% endblock %}
-{% block content%}
-    <h1>События</h1>
-    <p> Здесь будет вкладка с событиями</p>
+{% block title %}Мероприятия{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Мероприятия</h1>
+            <p class="page-subtitle">Карточки мероприятий с текущими статусами, площадками, участниками и ответственными сотрудниками.</p>
+        </div>
+        <a href="{% url 'add_event' %}" class="btn btn-primary">Создать мероприятие</a>
+    </section>
+
+    <section class="table-card">
+        <div class="panel">
+            <div class="filters">
+                <form method="get">
+                    <input class="form-control" type="text" name="search" placeholder="Поиск по названию или описанию" value="{{ query }}">
+                    <button type="submit" class="btn btn-secondary">Найти</button>
+                </form>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Дата</th>
+                        <th>Статус</th>
+                        <th>Площадка</th>
+                        <th>Ответственные</th>
+                        <th>Участники</th>
+                        <th>Задачи</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                        <tr>
+                            <td>
+                                <strong>{{ event.title }}</strong>
+                                <div class="muted" style="margin-top:6px;">{{ event.description|default:"Без описания" }}</div>
+                            </td>
+                            <td>{{ event.time|default:"—" }}</td>
+                            <td><span class="badge">{{ event.status }}</span></td>
+                            <td>{{ event.p.address|default:"Не указана" }}</td>
+                            <td>{{ event.employee_names|join:", "|default:"Не назначены" }}</td>
+                            <td>{{ event.participant_count }}</td>
+                            <td>{{ event.task_count }}</td>
+                            <td>
+                                <div class="toolbar">
+                                    <a href="{% url 'participants' %}?event={{ event.pk }}" class="btn btn-secondary">Участники</a>
+                                    <a href="{% url 'edit_event' event.pk %}" class="btn btn-secondary">Изменить</a>
+                                    <form action="{% url 'delete_event' event.pk %}" method="post" onsubmit="return confirm('Удалить мероприятие?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="empty-state">Мероприятия пока не созданы.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 {% endblock %}

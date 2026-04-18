@@ -1,0 +1,68 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}Участники{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Участники</h1>
+            <p class="page-subtitle">Список зарегистрированных участников с привязкой к мероприятиям и контактными данными.</p>
+        </div>
+        <a href="{% url 'add_participant' %}{% if selected_event %}?event={{ selected_event }}{% endif %}" class="btn btn-primary">Добавить участника</a>
+    </section>
+
+    <section class="table-card">
+        <div class="panel">
+            <div class="filters">
+                <form method="get">
+                    <input class="form-control" type="text" name="search" placeholder="Поиск по ФИО, телефону или почте" value="{{ query }}">
+                    <select class="form-select" name="event">
+                        <option value="">Все мероприятия</option>
+                        {% for event in events %}
+                            <option value="{{ event.pk }}" {% if selected_event == event.pk|stringformat:'s' %}selected{% endif %}>{{ event.title }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-secondary">Фильтровать</button>
+                </form>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Мероприятие</th>
+                        <th>Пол</th>
+                        <th>Телефон</th>
+                        <th>Почта</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in participants %}
+                        <tr>
+                            <td><strong>{{ participant.fullname|default:"—" }}</strong></td>
+                            <td>{{ participant.event.title }}</td>
+                            <td>{{ participant.gender_display }}</td>
+                            <td>{{ participant.phone|default:"—" }}</td>
+                            <td>{{ participant.email|default:"—" }}</td>
+                            <td>
+                                <div class="toolbar">
+                                    <a href="{% url 'edit_participant' participant.pk %}" class="btn btn-secondary">Изменить</a>
+                                    <form action="{% url 'delete_participant' participant.pk %}" method="post" onsubmit="return confirm('Удалить участника?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="empty-state">Участники пока не добавлены.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

@@ -1,10 +1,81 @@
 {% extends 'main/website_headers.html' %}
 
-{% block title %}
-Главная
-{% endblock %}
+{% block title %}Главная{% endblock %}
 
 {% block content %}
-    <h1>Главная</h1>
-    <p> Здесь будет главная страница</p>
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Рабочее место отдела мероприятий</h1>
+            <p class="page-subtitle">Единая точка для управления мероприятиями, участниками, задачами, отчетами и базой контрагентов.</p>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <article class="stats-card">
+            <div class="stats-label">Мероприятия</div>
+            <div class="stats-value">{{ events_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Участники</div>
+            <div class="stats-value">{{ participants_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Задачи</div>
+            <div class="stats-value">{{ tasks_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Контрагенты</div>
+            <div class="stats-value">{{ contractors_count }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Отчеты</div>
+            <div class="stats-value">{{ reports_count }}</div>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="card panel">
+            <h2 class="panel-title">Последние мероприятия</h2>
+            <div class="stack">
+                {% for event in recent_events %}
+                    <div class="card panel">
+                        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                            <div>
+                                <strong>{{ event.title }}</strong>
+                                <div class="muted" style="margin-top:6px;">{{ event.time|default:"Дата не указана" }}</div>
+                            </div>
+                            <span class="badge">{{ event.status }}</span>
+                        </div>
+                        <div class="muted" style="margin-top:10px;">{{ event.description|default:"Описание пока не добавлено." }}</div>
+                        <div class="muted" style="margin-top:10px;">Площадка: {{ event.p.address|default:"Не указана" }}</div>
+                        <div class="muted" style="margin-top:6px;">Ответственные: {{ event.employee_names|join:", "|default:"Не назначены" }}</div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Пока нет ни одного мероприятия. Можно начать с создания первой карточки.</div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="card panel">
+            <h2 class="panel-title">Актуальные задачи</h2>
+            <div class="stack">
+                {% for task in recent_tasks %}
+                    <div class="card panel">
+                        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                            <div>
+                                <strong>{{ task.title }}</strong>
+                                <div class="muted" style="margin-top:6px;">{{ task.event.title }}</div>
+                            </div>
+                            <span class="badge {% if task.status == 'В работе' %}warn{% elif task.status == 'Завершена' %}dark{% endif %}">{{ task.status }}</span>
+                        </div>
+                        <div class="muted" style="margin-top:10px;">{{ task.description|default:"Описание отсутствует." }}</div>
+                        <div class="muted" style="margin-top:10px;">Ответственный: {{ task.e|default:"Не назначен" }}</div>
+                        <div class="muted" style="margin-top:6px;">Срок: {{ task.deadline|default:"Не указан" }}</div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Задачи пока не заведены.</div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
 {% endblock %}

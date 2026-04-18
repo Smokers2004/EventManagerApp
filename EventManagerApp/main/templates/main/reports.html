@@ -1,10 +1,71 @@
 {% extends 'main/website_headers.html' %}
 
-{% block title %}
-Отчеты
-{% endblock %}
+{% block title %}Отчеты{% endblock %}
 
-{% block content%}
-    <h1>События</h1>
-    <p> Здесь будет вкладка с отчетами</p>
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Отчеты</h1>
+            <p class="page-subtitle">Список сформированных отчетов по мероприятиям и расходам. Генерация доступна руководителю и администратору.</p>
+        </div>
+    </section>
+
+    {% if request.user.can_generate_reports %}
+        <section class="form-card panel" style="margin-bottom: 24px;">
+            <h2 class="panel-title">Сформировать новый отчет</h2>
+            <div class="stack">
+                {% for event in events %}
+                    <div class="card panel">
+                        <div style="display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap;">
+                            <div>
+                                <strong>{{ event.title }}</strong>
+                                <div class="muted" style="margin-top:6px;">{{ event.time|default:"Дата не указана" }}</div>
+                            </div>
+                            <div class="toolbar">
+                                <form action="{% url 'generate_report' event.pk 'event' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">Отчет о мероприятии</button>
+                                </form>
+                                <form action="{% url 'generate_report' event.pk 'expense' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary">Отчет о расходах</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Для генерации отчета нужно сначала создать мероприятие.</div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="table-card">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Мероприятие</th>
+                        <th>Тип</th>
+                        <th>Файл</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                        <tr>
+                            <td>{{ report.rep_id }}</td>
+                            <td>{{ report.event.title }}</td>
+                            <td><span class="badge">{{ report.type }}</span></td>
+                            <td>{{ report.rep_path }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Отчеты еще не формировались.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 {% endblock %}

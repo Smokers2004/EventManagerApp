@@ -1,0 +1,58 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Пользователи</h1>
+            <p class="page-subtitle">Администратор может просматривать сотрудников и добавлять новые учетные записи с ролью.</p>
+        </div>
+        <a href="{% url 'add_employee' %}" class="btn btn-primary">Добавить пользователя</a>
+    </section>
+
+    <section class="table-card">
+        <div class="panel">
+            <div class="filters">
+                <form method="get">
+                    <input class="form-control" type="text" name="search" placeholder="Поиск по ФИО, логину или почте" value="{{ query }}">
+                    <button type="submit" class="btn btn-secondary">Найти</button>
+                </form>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Логин</th>
+                        <th>Роль</th>
+                        <th>Почта</th>
+                        <th>Телефон</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                        <tr>
+                            <td><strong>{{ employee.fullname|default:"—" }}</strong></td>
+                            <td>{{ employee.login }}</td>
+                            <td><span class="badge">{{ employee.role_label }}</span></td>
+                            <td>{{ employee.email|default:"—" }}</td>
+                            <td>{{ employee.phone|default:"—" }}</td>
+                            <td>
+                                <span class="badge {% if employee.is_active %}{% else %}dark{% endif %}">
+                                    {% if employee.is_active %}Активен{% else %}Отключен{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="empty-state">Пользователи не найдены.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}

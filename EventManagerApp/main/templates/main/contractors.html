@@ -1,228 +1,64 @@
 {% extends 'main/website_headers.html' %}
 
-{% block title %}
-Контрагенты
-{% endblock %}
+{% block title %}Контрагенты{% endblock %}
 
 {% block content %}
-<h2>Контрагенты</h2>
-<div class="container">
-    <div class="header-actions">
-        <!-- Поиск -->
-        <form method="get" class="search-form">
-            <input type="text" name="search" placeholder="Поиск по названию или ФИО..." value="{{ query }}">
-            <button type="submit" class="btn btn-search">Найти</button>
-        </form>
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Контрагенты</h1>
+            <p class="page-subtitle">Централизованная база поставщиков, арендодателей и партнеров по мероприятиям.</p>
+        </div>
+        <a href="{% url 'add_contractor' %}" class="btn btn-primary">Добавить контрагента</a>
+    </section>
 
-        <!-- Кнопка добавления -->
-        <a href="{% url 'add_contractor' %}" class="btn btn-add">+ Добавить контрагента</a>
-    </div>
-
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Название организации</th>
-                    <th>ФИО контакта</th>
-                    <th>Email</th>
-                    <th>Телефон</th>
-                    <th>Тип</th>
-                    <th>Описание</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in counterparties %}
-                <tr>
-                    <td><strong>{{ item.name }}</strong></td>
-                    <td>{{ item.fullname }}</td>
-                    <td><a href="mailto:{{ item.email }}">{{ item.email }}</a></td>
-                    <td>{{ item.phone }}</td>
-                    <td><span class="badge">{{ item.type}}</span></td>
-                    <td class="desc-cell">{{ item.description|truncatechars:50 }}</td>
-                  <!-- Форма для удаления -->
-                    <td>
-                    <form action="{% url 'delete_contractor' item.pk %}" method="POST"
-                        onsubmit="return confirm('Вы уверены, что хотите удалить этого контрагента?');" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-delete">
-                            <i class="trash-icon">✕</i> Удалить
-                        </button>
-                    </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 30px; color: #888;">
-                        Контрагенты не найдены
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<style>
-    /* Контейнер страницы */
-    .container {
-        padding: 20px;
-        max-width: 1200px;
-        margin: 0 auto;
-        font-family: 'Segoe UI', Roboto, sans-serif;
-    }
-
-    /* Верхняя панель: поиск и кнопка */
-    .header-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-        gap: 15px;
-    }
-
-    .search-form {
-        display: flex;
-        gap: 10px;
-        flex-grow: 1;
-    }
-
-    .search-form input {
-        padding: 10px 20px;
-        border: 1px solid #ddd;
-        border-radius: 50px; /* Округлость */
-        width: 100%;
-        max-width: 400px;
-        outline: none;
-        transition: border-color 0.3s;
-    }
-
-    .search-form input:focus {
-        border-color: #28a745;
-    }
-
-    /* Стили кнопок */
-    .btn {
-        text-decoration: none;
-        padding: 10px 25px;
-        border-radius: 50px; /* Округлость */
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: none;
-        display: inline-block;
-    }
-
-    .btn-search {
-        background-color: #f0f0f0;
-        color: #333;
-    }
-
-    .btn-search:hover {
-        background-color: #e0e0e0;
-    }
-
-    .btn-add {
-        background-color: #28a745;
-        color: white;
-        white-space: nowrap;
-    }
-
-    .btn-add:hover {
-        background-color: #218838;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
-    }
-
-    /* Стили таблицы */
-    .table-container {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-
-    thead {
-        background-color: #f9fbf9;
-        border-bottom: 2px solid #f0f0f0;
-    }
-    h2{
-        padding: 15px;
-        font-size: 30px;
-    }
-    th {
-        padding: 15px;
-        color: #666;
-        font-weight: 600;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    td {
-        padding: 15px;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 14px;
-        color: #444;
-        vertical-align: middle;
-    }
-
-    tr:hover {
-        background-color: #fcfdfc;
-    }
-
-    /* Бейдж для типа контрагента */
-    .badge {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-    }
-
-    .desc-cell {
-        color: #888;
-        font-style: italic;
-    }
-
-    a {
-        color: #28a745;
-        text-decoration: none;
-    }
-    .btn-delete {
-        background-color: transparent;
-        color: #ff4d4d;
-        border: 1px solid #ff4d4d;
-        padding: 5px 15px;
-        font-size: 12px;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-delete:hover {
-        background-color: #ff4d4d;
-        color: white;
-        box-shadow: 0 2px 8px rgba(255, 77, 77, 0.3);
-    }
-
-    .trash-icon {
-        font-style: normal;
-        margin-right: 3px;
-        font-weight: bold;
-    }
-
-    /* Немного уменьшим отступы, чтобы влезла новая колонка */
-    th, td {
-        padding: 12px 10px;
-    }
-
-</style>
+    <section class="table-card">
+        <div class="panel">
+            <div class="filters">
+                <form method="get">
+                    <input class="form-control" type="text" name="search" placeholder="Поиск по названию организации или контакту" value="{{ query }}">
+                    <button type="submit" class="btn btn-secondary">Найти</button>
+                </form>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Организация</th>
+                        <th>Контактное лицо</th>
+                        <th>Почта</th>
+                        <th>Телефон</th>
+                        <th>Тип</th>
+                        <th>Описание</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in counterparties %}
+                        <tr>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>{{ item.fullname }}</td>
+                            <td>{{ item.email }}</td>
+                            <td>{{ item.phone }}</td>
+                            <td><span class="badge">{{ item.get_type_display|default:item.type }}</span></td>
+                            <td>{{ item.description|default:"—" }}</td>
+                            <td>
+                                <div class="toolbar">
+                                    <a href="{% url 'edit_contractor' item.pk %}" class="btn btn-secondary">Изменить</a>
+                                    <form action="{% url 'delete_contractor' item.pk %}" method="post" onsubmit="return confirm('Удалить контрагента?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="empty-state">Контрагенты пока не добавлены.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 {% endblock %}
