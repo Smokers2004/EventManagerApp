@@ -24,6 +24,8 @@ urlpatterns = [
     path("expenses/add/", views.add_expense, name="add_expense"),
     path("expenses/<int:pk>/edit/", views.edit_expense, name="edit_expense"),
     path("expenses/<int:pk>/delete/", views.delete_expense, name="delete_expense"),
+    path("messages/", views.messages_page, name="messages"),
+    path("messages/<int:pk>/", views.message_detail, name="message_detail"),
     path("participants/", views.participants, name="participants"),
     path("participants/add/", views.add_participant, name="add_participant"),
     path("participants/<int:pk>/edit/", views.edit_participant, name="edit_participant"),
@@ -36,4 +38,5 @@ urlpatterns = [
     path("reports/generate/<int:event_id>/<str:report_type>/", views.generate_report, name="generate_report"),
     path("employees/", views.employees, name="employees"),
     path("employees/add/", views.add_employee, name="add_employee"),
+    path("employees/<int:pk>/edit/", views.edit_employee, name="edit_employee"),
 ]

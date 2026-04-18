@@ -6,7 +6,13 @@
     <section class="page-head">
         <div>
             <h1 class="page-title">{{ title }}</h1>
-            <p class="page-subtitle">Создание новой учетной записи доступно только администратору. Пароль сохраняется в защищенном виде.</p>
+            <p class="page-subtitle">
+                {% if is_edit_mode %}
+                    Администратор может менять роль, контакты, активность и при необходимости пароль пользователя.
+                {% else %}
+                    Создание новой учетной записи доступно только администратору. Пароль сохраняется в защищенном виде.
+                {% endif %}
+            </p>
         </div>
         <a href="{% url 'employees' %}" class="btn btn-secondary">Назад к списку</a>
     </section>
@@ -32,7 +38,9 @@
                 </div>
             {% endif %}
             <div class="toolbar" style="grid-column:1 / -1;">
-                <button type="submit" class="btn btn-primary">Сохранить пользователя</button>
+                <button type="submit" class="btn btn-primary">
+                    {% if is_edit_mode %}Сохранить изменения{% else %}Сохранить пользователя{% endif %}
+                </button>
                 <a href="{% url 'employees' %}" class="btn btn-secondary">Отмена</a>
             </div>
         </form>

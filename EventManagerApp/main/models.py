@@ -233,6 +233,36 @@ class Report(models.Model):
         ordering = ["-rep_id"]
 
 
+class Message(models.Model):
+    msg_id = models.AutoField(primary_key=True)
+    sender = models.ForeignKey(
+        Employee,
+        models.DO_NOTHING,
+        db_column="sender_id",
+        related_name="sent_messages",
+        verbose_name="Отправитель",
+    )
+    receiver = models.ForeignKey(
+        Employee,
+        models.DO_NOTHING,
+        db_column="receiver_id",
+        related_name="received_messages",
+        verbose_name="Получатель",
+    )
+    subject = models.CharField(max_length=255, blank=True, verbose_name="Тема")
+    body = models.TextField(verbose_name="Сообщение")
+    sent_at = models.DateTimeField(verbose_name="Отправлено")
+    is_read = models.BooleanField(default=False, verbose_name="Прочитано")
+
+    class Meta:
+        managed = False
+        db_table = "message"
+        ordering = ["-sent_at", "-msg_id"]
+
+    def __str__(self):
+        return self.subject or f"Сообщение #{self.msg_id}"
+
+
 class Task(models.Model):
     STATUS_NEW = "Новая"
     STATUS_IN_PROGRESS = "В работе"

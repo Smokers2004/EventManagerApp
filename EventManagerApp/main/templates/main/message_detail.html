@@ -1,0 +1,43 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}Сообщение{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">{{ message_obj.subject|default:"Без темы" }}</h1>
+            <p class="page-subtitle">Просмотр сообщения и быстрый ответ другому сотруднику.</p>
+        </div>
+        <a href="{% url 'messages' %}" class="btn btn-secondary">Назад к сообщениям</a>
+    </section>
+
+    <section class="content-grid">
+        <article class="card panel">
+            <h2 class="panel-title">Сообщение</h2>
+            <div class="stack">
+                <div><strong>От:</strong> {{ message_obj.sender }}</div>
+                <div><strong>Кому:</strong> {{ message_obj.receiver }}</div>
+                <div><strong>Дата:</strong> {{ message_obj.sent_at|date:"d.m.Y H:i" }}</div>
+                <div><strong>Статус:</strong> {% if message_obj.is_read %}Прочитано{% else %}Не прочитано{% endif %}</div>
+                <div class="card panel">{{ message_obj.body|linebreaksbr }}</div>
+            </div>
+        </article>
+
+        <article class="form-card panel">
+            <h2 class="panel-title">Ответить</h2>
+            <form method="post" class="stack">
+                {% csrf_token %}
+                {% for field in reply_form %}
+                    <div class="field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="errors">{{ field.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Отправить ответ</button>
+            </form>
+        </article>
+    </section>
+{% endblock %}

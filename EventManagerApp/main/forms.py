@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
-from .models import Contractor, Employee, Event, Order, Participant, Place, Task
+from .models import Contractor, Employee, Event, Message, Order, Participant, Place, Task
 
 
 class StyledFormMixin:
@@ -118,6 +118,63 @@ class EmployeeCreationForm(forms.ModelForm, StyledFormMixin):
         user.is_staff = user.position == Employee.ROLE_ADMIN or user.is_staff
         user.is_superuser = user.position == Employee.ROLE_ADMIN or user.is_superuser
         user.set_password(password)
+        if commit:
+            user.save()
+        return user
+
+
+class EmployeeUpdateForm(forms.ModelForm, StyledFormMixin):
+    password1 = forms.CharField(
+        label="Новый пароль",
+        required=False,
+        widget=forms.PasswordInput(attrs={"placeholder": "Оставьте пустым, если менять не нужно"}),
+        help_text="Если поле пустое, текущий пароль сохранится.",
+    )
+    password2 = forms.CharField(
+        label="Подтверждение нового пароля",
+        required=False,
+        widget=forms.PasswordInput(attrs={"placeholder": "Повторите новый пароль"}),
+    )
+
+    class Meta:
+        model = Employee
+        fields = ["fullname", "login", "email", "phone", "age", "position", "is_active"]
+        widgets = {
+            "fullname": forms.TextInput(attrs={"placeholder": "Петрова Мария Сергеевна"}),
+            "login": forms.TextInput(attrs={"placeholder": "m.petrova"}),
+            "email": forms.EmailInput(attrs={"placeholder": "employee@example.com"}),
+            "phone": forms.TextInput(attrs={"placeholder": "+7 (999) 000-00-00"}),
+            "age": forms.NumberInput(attrs={"placeholder": "30", "min": 18}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_base_styles()
+
+    def clean_login(self):
+        login = self.cleaned_data["login"]
+        qs = Employee.objects.filter(login=login).exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError("Пользователь с таким логином уже существует.")
+        return login
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+        if password1 or password2:
+            if password1 != password2:
+                raise ValidationError("Пароли не совпадают.")
+            validate_password(password1, self.instance)
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password = self.cleaned_data.get("password1")
+        user.is_staff = user.position == Employee.ROLE_ADMIN or user.is_superuser or user.is_staff
+        user.is_superuser = user.position == Employee.ROLE_ADMIN or user.is_superuser
+        if password:
+            user.set_password(password)
         if commit:
             user.save()
         return user
@@ -246,4 +303,23 @@ class OrderForm(forms.ModelForm, StyledFormMixin):
         super().__init__(*args, **kwargs)
         self.fields["event"].queryset = Event.objects.all()
         self.fields["c"].queryset = Contractor.objects.all()
+        self.apply_base_styles()
+
+
+class MessageForm(forms.ModelForm, StyledFormMixin):
+    class Meta:
+        model = Message
+        fields = ["receiver", "subject", "body"]
+        widgets = {
+            "receiver": forms.Select(),
+            "subject": forms.TextInput(attrs={"placeholder": "Тема сообщения"}),
+            "body": forms.Textarea(attrs={"rows": 6, "placeholder": "Введите текст сообщения"}),
+        }
+
+    def __init__(self, *args, sender=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        queryset = Employee.objects.filter(is_active=True)
+        if sender is not None:
+            queryset = queryset.exclude(pk=sender.pk)
+        self.fields["receiver"].queryset = queryset
         self.apply_base_styles()

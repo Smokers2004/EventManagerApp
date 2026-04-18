@@ -8,6 +8,7 @@ from django.db import connection
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -17,14 +18,16 @@ from .decorators import role_required
 from .forms import (
     ContractorForm,
     EmployeeCreationForm,
+    EmployeeUpdateForm,
     EventForm,
     LoginUserForm,
+    MessageForm,
     OrderForm,
     ParticipantForm,
     PlaceForm,
     TaskForm,
 )
-from .models import Contractor, Employee, Event, Order, Participant, Place, Report, Task
+from .models import Contractor, Employee, Event, Message, Order, Participant, Place, Report, Task
 
 
 def _fetch_event_employee_map(event_ids):
@@ -370,6 +373,7 @@ def main_page(request):
         "places_count": Place.objects.count(),
         "reports_count": Report.objects.count(),
         "expenses_count": Order.objects.count(),
+        "messages_count": Message.objects.filter(receiver=request.user, is_read=False).count(),
         "recent_events": recent_events,
         "recent_tasks": Task.objects.select_related("event", "e")[:5],
     }
@@ -637,6 +641,72 @@ def delete_expense(request, pk):
 
 
 @login_required
+def messages_page(request):
+    form = MessageForm(request.POST or None, sender=request.user)
+    if request.method == "POST" and form.is_valid():
+        message = form.save(commit=False)
+        message.sender = request.user
+        message.is_read = False
+        message.sent_at = timezone.now()
+        message.save()
+        messages.success(request, "Сообщение отправлено.")
+        return redirect("messages")
+
+    inbox = Message.objects.filter(receiver=request.user).select_related("sender", "receiver")
+    sent = Message.objects.filter(sender=request.user).select_related("sender", "receiver")
+    return render(
+        request,
+        "main/messages.html",
+        {
+            "form": form,
+            "inbox": inbox,
+            "sent": sent,
+            "unread_count": inbox.filter(is_read=False).count(),
+        },
+    )
+
+
+@login_required
+def message_detail(request, pk):
+    message_obj = get_object_or_404(
+        Message.objects.select_related("sender", "receiver"),
+        pk=pk,
+    )
+    if request.user.pk not in {message_obj.sender_id, message_obj.receiver_id}:
+        return HttpResponseForbidden("Недостаточно прав.")
+
+    if message_obj.receiver_id == request.user.pk and not message_obj.is_read:
+        message_obj.is_read = True
+        message_obj.save(update_fields=["is_read"])
+
+    reply_form = MessageForm(
+        request.POST or None,
+        sender=request.user,
+        initial={
+            "receiver": message_obj.sender_id if message_obj.sender_id != request.user.pk else message_obj.receiver_id,
+            "subject": f"Re: {message_obj.subject or 'Без темы'}",
+        },
+    )
+    if request.method == "POST" and reply_form.is_valid():
+        reply = reply_form.save(commit=False)
+        reply.sender = request.user
+        reply.is_read = False
+        reply.sent_at = timezone.now()
+        reply.save()
+        messages.success(request, "Ответ отправлен.")
+        return redirect("message_detail", pk=message_obj.pk)
+
+    return render(
+        request,
+        "main/message_detail.html",
+        {
+            "message_obj": message_obj,
+            "reply_form": reply_form,
+        },
+    )
+
+
+@login_required
 def add_participant(request):
     initial = {}
     if request.GET.get("event"):
@@ -766,3 +836,22 @@ def add_employee(request):
         messages.success(request, "Новый пользователь добавлен.")
         return redirect("employees")
     return render(request, "main/employee_form.html", {"form": form, "title": "Новый пользователь"})
+
+
+@role_required(Employee.ROLE_ADMIN)
+def edit_employee(request, pk):
+    employee = get_object_or_404(Employee, pk=pk)
+    form = EmployeeUpdateForm(request.POST or None, instance=employee)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Данные пользователя обновлены.")
+        return redirect("employees")
+    return render(
+        request,
+        "main/employee_form.html",
+        {
+            "form": form,
+            "title": "Редактирование пользователя",
+            "is_edit_mode": True,
+        },
+    )

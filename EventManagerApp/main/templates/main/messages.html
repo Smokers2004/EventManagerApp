@@ -1,0 +1,87 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}Сообщения{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Сообщения</h1>
+            <p class="page-subtitle">Внутренняя переписка между сотрудниками отдела. Здесь доступны входящие, исходящие и форма отправки нового сообщения.</p>
+        </div>
+    </section>
+
+    <section class="content-grid">
+        <article class="form-card panel">
+            <h2 class="panel-title">Новое сообщение</h2>
+            <form method="post" class="stack">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="errors">{{ field.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Отправить</button>
+            </form>
+        </article>
+
+        <article class="card panel">
+            <h2 class="panel-title">Входящие</h2>
+            <div class="muted" style="margin-bottom:16px;">Непрочитанных: {{ unread_count }}</div>
+            <div class="stack">
+                {% for item in inbox %}
+                    <a href="{% url 'message_detail' item.pk %}" class="card panel">
+                        <div style="display:flex; justify-content:space-between; gap:12px;">
+                            <strong>{{ item.subject|default:"Без темы" }}</strong>
+                            {% if item.is_read %}
+                                <span class="badge dark">Прочитано</span>
+                            {% else %}
+                                <span class="badge">Новое</span>
+                            {% endif %}
+                        </div>
+                        <div class="muted" style="margin-top:8px;">От: {{ item.sender }}</div>
+                        <div class="muted" style="margin-top:8px;">{{ item.body|truncatechars:120 }}</div>
+                        <div class="muted" style="margin-top:8px;">{{ item.sent_at|date:"d.m.Y H:i" }}</div>
+                    </a>
+                {% empty %}
+                    <div class="empty-state">Входящих сообщений пока нет.</div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="table-card" style="margin-top:24px;">
+        <div class="panel">
+            <h2 class="panel-title">Исходящие</h2>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Кому</th>
+                        <th>Тема</th>
+                        <th>Текст</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sent %}
+                        <tr>
+                            <td>{{ item.receiver }}</td>
+                            <td><a href="{% url 'message_detail' item.pk %}"><strong>{{ item.subject|default:"Без темы" }}</strong></a></td>
+                            <td>{{ item.body|truncatechars:140 }}</td>
+                            <td>{{ item.sent_at|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="empty-state">Исходящих сообщений пока нет.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}
