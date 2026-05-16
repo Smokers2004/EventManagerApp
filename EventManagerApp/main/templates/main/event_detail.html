@@ -1,4 +1,5 @@
 {% extends 'main/website_headers.html' %}
+{% load static %}
 
 {% block title %}Карточка мероприятия{% endblock %}
 
@@ -10,6 +11,12 @@
         </div>
         <div class="toolbar">
             <a href="{% url 'add_expense' %}?event={{ event.pk }}" class="btn btn-primary">Добавить расход</a>
+            {% if request.user.can_close_events and not is_event_finished %}
+                <form action="{% url 'close_event' event.pk %}" method="post" onsubmit="return confirm('Закрыть мероприятие?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Закрыть мероприятие</button>
+                </form>
+            {% endif %}
             <a href="{% url 'edit_event' event.pk %}" class="btn btn-secondary">Редактировать</a>
         </div>
     </section>
@@ -24,25 +31,77 @@
             <div class="stats-value" style="font-size:24px;">{{ event.time|default:"—" }}</div>
         </article>
         <article class="stats-card">
+            <div class="stats-label">Дата окончания</div>
+            <div class="stats-value" style="font-size:24px;">{{ event.end_date|default:"—" }}</div>
+        </article>
+        <article class="stats-card">
             <div class="stats-label">Участники</div>
             <div class="stats-value">{{ participants_count }}</div>
         </article>
+        {% if is_event_finished %}
+            <article class="stats-card">
+                <div class="stats-label">Доля пришедших</div>
+                <div class="stats-value" style="font-size:24px;">{{ attended_count }} / {{ participants_count }} ({{ attendance_ratio }}%)</div>
+            </article>
+        {% endif %}
         <article class="stats-card">
             <div class="stats-label">Задачи</div>
             <div class="stats-value">{{ tasks_count }}</div>
         </article>
         <article class="stats-card">
+            <div class="stats-label">Отзывы</div>
+            <div class="stats-value">{{ feedback_count }}</div>
+        </article>
+        <article class="stats-card">
             <div class="stats-label">Сумма расходов</div>
             <div class="stats-value" style="font-size:24px;">{{ expense_total|floatformat:2 }}</div>
         </article>
+        <article class="stats-card">
+            <div class="stats-label">Планируемый бюджет</div>
+            <div class="stats-value" style="font-size:24px;">{{ planned_budget|floatformat:2 }}</div>
+        </article>
+        <article class="stats-card">
+            <div class="stats-label">Отклонение бюджета</div>
+            <div class="stats-value" style="font-size:24px;">
+                {% if budget_deviation_percent is not None %}
+                    {{ budget_deviation_percent|floatformat:2 }}%
+                {% else %}
+                    Н/Д
+                {% endif %}
+            </div>
+        </article>
     </section>
 
+    <nav class="event-tabs">
+        <a class="event-tab {% if active_tab == 'overview' %}active{% endif %}" href="{% url 'event_detail' event.pk %}?tab=overview">
+            <span>Обзор</span>
+        </a>
+        <a class="event-tab event-tab-feedback {% if active_tab == 'feedback' %}active{% endif %}" href="{% url 'event_detail' event.pk %}?tab=feedback">
+            <span>Обратная связь</span>
+            <strong>{{ feedback_count }}</strong>
+        </a>
+    </nav>
+
+    {% if active_tab == 'overview' %}
     <section class="content-grid">
         <article class="card panel">
             <h2 class="panel-title">Общая информация</h2>
             <div class="stack">
                 <div><strong>Площадка:</strong> {{ event.p.address|default:"Не указана" }}</div>
                 <div><strong>Описание:</strong> {{ event.description|default:"Не заполнено" }}</div>
+                <div><strong>Дата окончания:</strong> {{ event.end_date|default:"Не указана" }}</div>
+                <div><strong>Планируемый бюджет:</strong> {{ planned_budget|floatformat:2 }} руб.</div>
+                <div>
+                    <strong>Отклонение фактических расходов:</strong>
+                    {% if budget_deviation_percent is not None %}
+                        {{ budget_deviation_percent|floatformat:2 }}%
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                </div>
+                {% if is_event_finished %}
+                    <div><strong>Доля пришедших:</strong> {{ attended_count }} из {{ participants_count }} ({{ attendance_ratio }}%)</div>
+                {% endif %}
                 <div><strong>Привязанные пользователи:</strong> {{ employees|join:", "|default:"Не назначены" }}</div>
             </div>
         </article>
@@ -51,12 +110,77 @@
             <h2 class="panel-title">Быстрые действия</h2>
             <div class="toolbar">
                 <a href="{% url 'participants' %}?event={{ event.pk }}" class="btn btn-secondary">Участники</a>
+                <a href="{% url 'upload_participants_csv' %}?event={{ event.pk }}" class="btn btn-secondary">Импорт CSV</a>
+                <a href="{% url 'event_detail' event.pk %}?tab=feedback" class="btn btn-primary btn-feedback">Обратная связь</a>
                 <a href="{% url 'tasks' %}?event={{ event.pk }}" class="btn btn-secondary">Задачи</a>
                 <a href="{% url 'expenses' %}?event={{ event.pk }}" class="btn btn-secondary">Все расходы</a>
             </div>
         </article>
     </section>
+    {% endif %}
 
+    {% if active_tab == 'feedback' %}
+        {% if feedback_keywords %}
+            <section class="card panel" style="margin-top:24px;">
+                <h2 class="panel-title">Ключевые слова из отзывов</h2>
+                <div class="keyword-list">
+                    {% for keyword in feedback_keywords %}
+                        <span class="keyword-chip">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="card panel" style="margin-top:24px;">
+            <div class="event-tab-head">
+                <h2 class="panel-title">Распределение оценок</h2>
+                <span class="muted">{{ feedback_count }} отзывов</span>
+            </div>
+            <div class="chart-canvas-shell rating-chart-shell">
+                <canvas id="eventRatingChart" aria-label="Гистограмма распределения оценок" role="img"></canvas>
+            </div>
+        </section>
+
+        <section class="table-card" style="margin-top:24px;">
+            <div class="panel event-tab-head">
+                <h2 class="panel-title">Обратная связь</h2>
+                <a href="{% url 'upload_feedback_csv' %}?event={{ event.pk }}" class="btn btn-secondary">Импорт отзывов CSV</a>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Оценка</th>
+                            <th>Отзыв</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in feedbacks %}
+                            <tr>
+                                <td><span class="badge">{{ feedback.rating }}/10</span></td>
+                                <td>{{ feedback.review }}</td>
+                                <td>
+                                    <div class="toolbar">
+                                        <form action="{% url 'delete_feedback' feedback.pk %}" method="post" onsubmit="return confirm('Удалить отзыв?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">Отзывы по мероприятию пока не добавлены.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if active_tab == 'overview' %}
     <section class="form-card panel" style="margin-top:24px;">
         <h2 class="panel-title">Привязка пользователей к мероприятию</h2>
         <p class="muted" style="margin-bottom: 16px;">Отметьте сотрудников, которые должны быть связаны с мероприятием, и сохраните список.</p>
@@ -125,4 +249,11 @@
             <strong>Итого: {{ expense_total|floatformat:2 }} руб.</strong>
         </div>
     </section>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+    {{ rating_chart_data|json_script:"event-rating-chart-data" }}
+    <script src="{% static 'main/vendor/chartjs/chart.umd.min.js' %}"></script>
+    <script src="{% static 'main/js/event_detail_charts.js' %}"></script>
 {% endblock %}

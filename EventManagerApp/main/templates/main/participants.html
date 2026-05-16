@@ -8,7 +8,10 @@
             <h1 class="page-title">Участники</h1>
             <p class="page-subtitle">Список зарегистрированных участников с привязкой к мероприятиям и контактными данными.</p>
         </div>
-        <a href="{% url 'add_participant' %}{% if selected_event %}?event={{ selected_event }}{% endif %}" class="btn btn-primary">Добавить участника</a>
+        <div class="toolbar">
+            <a href="{% url 'upload_participants_csv' %}{% if selected_event %}?event={{ selected_event }}{% endif %}" class="btn btn-secondary">Импорт CSV</a>
+            <a href="{% url 'add_participant' %}{% if selected_event %}?event={{ selected_event }}{% endif %}" class="btn btn-primary">Добавить участника</a>
+        </div>
     </section>
 
     <section class="table-card">
@@ -35,6 +38,7 @@
                         <th>Пол</th>
                         <th>Телефон</th>
                         <th>Почта</th>
+                        <th>Посещение</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -47,6 +51,21 @@
                             <td>{{ participant.phone|default:"—" }}</td>
                             <td>{{ participant.email|default:"—" }}</td>
                             <td>
+                                <form action="{% url 'update_participant_attendance' participant.pk %}" method="post" class="inline-check-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <label class="attendance-toggle">
+                                        <input
+                                            type="checkbox"
+                                            name="attended"
+                                            {% if participant.attended %}checked{% endif %}
+                                            onchange="this.form.submit()"
+                                        >
+                                        <span>{% if participant.attended %}Пришел{% else %}Не отмечен{% endif %}</span>
+                                    </label>
+                                </form>
+                            </td>
+                            <td>
                                 <div class="toolbar">
                                     <a href="{% url 'edit_participant' participant.pk %}" class="btn btn-secondary">Изменить</a>
                                     <form action="{% url 'delete_participant' participant.pk %}" method="post" onsubmit="return confirm('Удалить участника?');">
@@ -58,7 +77,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="empty-state">Участники пока не добавлены.</td>
+                            <td colspan="7" class="empty-state">Участники пока не добавлены.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

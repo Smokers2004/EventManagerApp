@@ -1,5 +1,6 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -121,6 +122,14 @@ class Employee(AbstractBaseUser, PermissionsMixin):
     def can_delete_tasks(self):
         return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_TEAMLEAD}
 
+    @property
+    def can_close_tasks(self):
+        return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_MANAGER, self.ROLE_TEAMLEAD}
+
+    @property
+    def can_close_events(self):
+        return self.is_superuser or self.position in {self.ROLE_ADMIN, self.ROLE_MANAGER, self.ROLE_TEAMLEAD}
+
 
 class EmployeeOnEvent(models.Model):
     e = models.ForeignKey(Employee, models.DO_NOTHING, db_column="e_id")
@@ -164,7 +173,24 @@ class Event(models.Model):
     title = models.TextField(verbose_name="Название")
     description = models.TextField(blank=True, null=True, verbose_name="Описание")
     time = models.TextField(blank=True, null=True, verbose_name="Дата и время")
+    end_date = models.TextField(blank=True, null=True, verbose_name="Дата окончания")
+    planned_budget = models.FloatField(
+        blank=True,
+        null=True,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Планируемый бюджет",
+    )
     status = models.TextField(verbose_name="Статус")
+    created_by = models.ForeignKey(
+        Employee,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_column="created_by_id",
+        related_name="created_events",
+        verbose_name="Создатель",
+    )
 
     class Meta:
         managed = False
@@ -199,6 +225,7 @@ class Participant(models.Model):
     gender = models.BinaryField(blank=True, null=True, verbose_name="Пол")
     phone = models.TextField(blank=True, null=True, verbose_name="Телефон")
     email = models.TextField(blank=True, null=True, verbose_name="Почта")
+    attended = models.BooleanField(default=False, verbose_name="Посещение")
 
     class Meta:
         managed = False
@@ -215,6 +242,28 @@ class Participant(models.Model):
         if self.gender in (self.GENDER_FEMALE, memoryview(self.GENDER_FEMALE)):
             return "Женский"
         return "Не указан"
+
+    @property
+    def attended_value(self):
+        return 1 if self.attended else 0
+
+
+class Feedback(models.Model):
+    feedback_id = models.AutoField(primary_key=True)
+    event = models.ForeignKey(Event, models.DO_NOTHING, db_column="event_id", verbose_name="Мероприятие")
+    rating = models.PositiveSmallIntegerField(
+        verbose_name="Оценка",
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+    )
+    review = models.TextField(verbose_name="Отзыв")
+
+    class Meta:
+        managed = False
+        db_table = "feedback"
+        ordering = ["-feedback_id"]
+
+    def __str__(self):
+        return f"{self.event} - {self.rating}/10"
 
 
 class Report(models.Model):
@@ -300,6 +349,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="Описание")
     deadline = models.TextField(blank=True, null=True, verbose_name="Срок")
     status = models.TextField(verbose_name="Статус")
+    closed_at = models.DateTimeField(blank=True, null=True, verbose_name="Дата закрытия")
 
     class Meta:
         managed = False

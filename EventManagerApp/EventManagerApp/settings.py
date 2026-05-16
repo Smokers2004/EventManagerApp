@@ -83,6 +83,8 @@ AUTHENTICATION_BACKENDS = [
     "main.auth_backends.EmployeeAuthBackend",
 ]
 
+TEST_RUNNER = "main.test_runner.ExistingDatabaseTestRunner"
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "main_page"
 LOGOUT_REDIRECT_URL = "login"

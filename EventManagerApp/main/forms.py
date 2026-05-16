@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-from .models import Contractor, Employee, Event, Message, Order, Participant, Place, Task
+from .models import Contractor, Employee, EmployeeOnEvent, Event, Message, Order, Participant, Place, Task
 
 
 class StyledFormMixin:
@@ -14,6 +15,8 @@ class StyledFormMixin:
                 css_class = "form-select"
             if isinstance(widget, forms.CheckboxSelectMultiple):
                 css_class = "checkbox-list"
+            if isinstance(widget, forms.CheckboxInput):
+                css_class = "form-check-input"
             existing = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{existing} {css_class}".strip()
 
@@ -190,11 +193,13 @@ class EventForm(forms.ModelForm, StyledFormMixin):
 
     class Meta:
         model = Event
-        fields = ["title", "description", "time", "status", "p"]
+        fields = ["title", "description", "time", "end_date", "planned_budget", "status", "p"]
         widgets = {
             "title": forms.TextInput(attrs={"placeholder": "Корпоративный форум 2026"}),
             "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Краткое описание мероприятия"}),
             "time": forms.TextInput(attrs={"placeholder": "25.05.2026 10:00"}),
+            "end_date": forms.TextInput(attrs={"placeholder": "25.05.2026 18:00"}),
+            "planned_budget": forms.NumberInput(attrs={"min": 0, "step": "0.01", "placeholder": "150000"}),
             "status": forms.Select(choices=Event.STATUS_CHOICES),
             "p": forms.Select(),
         }
@@ -232,11 +237,11 @@ class ParticipantForm(forms.Form, StyledFormMixin):
     )
     phone = forms.CharField(label="Телефон", required=False)
     email = forms.EmailField(label="Почта", required=False)
-
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop("instance", None)
+        event_queryset = kwargs.pop("event_queryset", None)
         super().__init__(*args, **kwargs)
-        self.fields["event"].queryset = Event.objects.all()
+        self.fields["event"].queryset = event_queryset if event_queryset is not None else Event.objects.all()
         self.fields["fullname"].widget.attrs["placeholder"] = "Смирнов Алексей Олегович"
         self.fields["phone"].widget.attrs["placeholder"] = "+7 (999) 000-00-00"
         self.fields["email"].widget.attrs["placeholder"] = "participant@example.com"
@@ -272,6 +277,48 @@ class ParticipantForm(forms.Form, StyledFormMixin):
         return participant
 
 
+class ParticipantCsvUploadForm(forms.Form, StyledFormMixin):
+    event = forms.ModelChoiceField(label="Мероприятие", queryset=Event.objects.all())
+    file = forms.FileField(
+        label="CSV файл",
+        help_text="Поддерживаются колонки: fullname/ФИО, gender/пол, phone/телефон/номер телефона, email/почта. Посещение отмечается вручную после мероприятия.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        event_queryset = kwargs.pop("event_queryset", None)
+        super().__init__(*args, **kwargs)
+        self.fields["event"].queryset = event_queryset if event_queryset is not None else Event.objects.all()
+        self.fields["file"].widget.attrs["accept"] = ".csv,text/csv"
+        self.apply_base_styles()
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if not uploaded_file.name.lower().endswith(".csv"):
+            raise ValidationError("Загрузите файл в формате CSV.")
+        return uploaded_file
+
+
+class FeedbackCsvUploadForm(forms.Form, StyledFormMixin):
+    event = forms.ModelChoiceField(label="Мероприятие", queryset=Event.objects.all())
+    file = forms.FileField(
+        label="CSV файл",
+        help_text="Поддерживаются колонки: rating/оценка и review/отзыв. Без заголовков: оценка, отзыв.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        event_queryset = kwargs.pop("event_queryset", None)
+        super().__init__(*args, **kwargs)
+        self.fields["event"].queryset = event_queryset if event_queryset is not None else Event.objects.all()
+        self.fields["file"].widget.attrs["accept"] = ".csv,text/csv"
+        self.apply_base_styles()
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if not uploaded_file.name.lower().endswith(".csv"):
+            raise ValidationError("Загрузите файл в формате CSV.")
+        return uploaded_file
+
+
 class TaskForm(forms.ModelForm, StyledFormMixin):
     class Meta:
         model = Task
@@ -283,17 +330,61 @@ class TaskForm(forms.ModelForm, StyledFormMixin):
             "status": forms.Select(choices=Task.STATUS_CHOICES),
         }
 
-    def __init__(self, *args, operator=None, **kwargs):
+    def __init__(self, *args, operator=None, event_queryset=None, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.operator = operator
-        self.fields["event"].queryset = Event.objects.all()
-        self.fields["e"].queryset = Employee.objects.filter(is_active=True)
+        self.actor = actor or operator
+        self.fields["event"].queryset = event_queryset if event_queryset is not None else Event.objects.all()
+        self.fields["e"].queryset = self._get_assignee_queryset(event_queryset)
         self.apply_base_styles()
+
+    def _get_selected_event_id(self):
+        if self.data:
+            return self.data.get(self.add_prefix("event")) or self.data.get("event")
+        if self.initial.get("event"):
+            event = self.initial["event"]
+            return getattr(event, "pk", event)
+        if self.instance and self.instance.pk:
+            return self.instance.event_id
+        return None
+
+    def _get_assignee_queryset(self, event_queryset):
+        queryset = Employee.objects.filter(is_active=True)
+        if self.actor and self.actor.position == Employee.ROLE_MANAGER:
+            queryset = queryset.filter(position=Employee.ROLE_ASSISTANT)
+
+        event_id = self._get_selected_event_id()
+        if event_id:
+            queryset = queryset.filter(employeeonevent__event_id=event_id)
+        elif event_queryset is not None:
+            queryset = queryset.filter(employeeonevent__event__in=event_queryset)
+
+        return queryset.distinct()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        event = cleaned_data.get("event")
+        assignee = cleaned_data.get("e")
+        if not event or not assignee:
+            return cleaned_data
+
+        if self.actor and self.actor.position == Employee.ROLE_MANAGER and assignee.position != Employee.ROLE_ASSISTANT:
+            self.add_error("e", "Менеджер может назначать задачи только ассистентам.")
+
+        is_linked = EmployeeOnEvent.objects.filter(event=event, e=assignee).exists()
+        if not is_linked:
+            self.add_error("e", "Ответственный должен быть привязан к выбранному мероприятию.")
+
+        return cleaned_data
 
     def save(self, commit=True):
         task = super().save(commit=False)
         if self.operator:
             task.operator = self.operator
+        if task.status == Task.STATUS_DONE and not task.closed_at:
+            task.closed_at = timezone.now()
+        elif task.status != Task.STATUS_DONE:
+            task.closed_at = None
         if commit:
             task.save()
         return task
@@ -312,9 +403,9 @@ class OrderForm(forms.ModelForm, StyledFormMixin):
             "date": forms.TextInput(attrs={"placeholder": "20.05.2026"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, event_queryset=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["event"].queryset = Event.objects.all()
+        self.fields["event"].queryset = event_queryset if event_queryset is not None else Event.objects.all()
         self.fields["c"].queryset = Contractor.objects.all()
         self.apply_base_styles()
 

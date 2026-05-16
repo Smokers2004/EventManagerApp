@@ -25,7 +25,7 @@
                     <a class="nav-link" href="{% url 'participants' %}">Участники</a>
                     <a class="nav-link" href="{% url 'tasks' %}">Задачи</a>
                     <a class="nav-link" href="{% url 'messages' %}">Сообщения</a>
-                    <a class="nav-link" href="{% url 'reports' %}">Отчеты</a>
+                    <a class="nav-link" href="{% url 'analytics' %}">Аналитика</a>
                     <a class="nav-link" href="{% url 'contractors' %}">Контрагенты</a>
                     {% if request.user.can_manage_users %}
                         <a class="nav-link" href="{% url 'employees' %}">Пользователи</a>
@@ -52,5 +52,6 @@
         {% block content %}{% endblock %}
     </main>
 </div>
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

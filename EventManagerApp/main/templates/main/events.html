@@ -31,7 +31,9 @@
                         <th>Ответственные</th>
                         <th>Участники</th>
                         <th>Задачи</th>
+                        <th>Плановый бюджет</th>
                         <th>Расходы</th>
+                        <th>Отклонение</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -48,7 +50,15 @@
                             <td>{{ event.employee_names|join:", "|default:"Не назначены" }}</td>
                             <td>{{ event.participant_count }}</td>
                             <td>{{ event.task_count }}</td>
+                            <td>{{ event.planned_budget_value|floatformat:2 }} руб.</td>
                             <td>{{ event.expense_total|floatformat:2 }} руб.</td>
+                            <td>
+                                {% if event.budget_deviation_percent is not None %}
+                                    {{ event.budget_deviation_percent|floatformat:2 }}%
+                                {% else %}
+                                    Н/Д
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="toolbar">
                                     <a href="{% url 'event_detail' event.pk %}" class="btn btn-secondary">Карточка</a>
@@ -63,7 +73,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="9" class="empty-state">Мероприятия пока не созданы.</td>
+                            <td colspan="11" class="empty-state">Мероприятия пока не созданы.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

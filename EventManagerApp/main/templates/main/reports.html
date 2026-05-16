@@ -58,7 +58,9 @@
                             <td>{{ report.rep_id }}</td>
                             <td>{{ report.event.title }}</td>
                             <td><span class="badge">{{ report.type }}</span></td>
-                            <td>{{ report.rep_path }}</td>
+                            <td>
+                                <a href="{% url 'download_report' report.pk %}">{{ report.rep_path }}</a>
+                            </td>
                             <td>
                                 {% if request.user.can_generate_reports %}
                                     <form action="{% url 'delete_report' report.pk %}" method="post" onsubmit="return confirm('Удалить отчет из системы и с компьютера?');">

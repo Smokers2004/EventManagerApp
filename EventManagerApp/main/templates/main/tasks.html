@@ -36,12 +36,13 @@
                         <th>Постановщик</th>
                         <th>Срок</th>
                         <th>Статус</th>
+                        <th>Дата закрытия</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for task in tasks %}
-                        <tr>
+                        <tr class="{% if task.closed_late %}row-danger{% endif %}">
                             <td>
                                 <strong>{{ task.title }}</strong>
                                 <div class="muted" style="margin-top:6px;">{{ task.description|default:"Без описания" }}</div>
@@ -50,9 +51,16 @@
                             <td>{{ task.e|default:"Не назначен" }}</td>
                             <td>{{ task.operator }}</td>
                             <td>{{ task.deadline|default:"—" }}</td>
-                            <td><span class="badge {% if task.status == 'В работе' %}warn{% elif task.status == 'Завершена' %}dark{% endif %}">{{ task.status }}</span></td>
+                            <td><span class="badge {% if task.closed_late %}danger{% elif task.status == 'В работе' %}warn{% elif task.status == 'Завершена' %}dark{% endif %}">{{ task.status }}</span></td>
+                            <td>{{ task.closed_at|date:"d.m.Y H:i"|default:"—" }}</td>
                             <td>
                                 <div class="toolbar">
+                                    {% if request.user.can_close_tasks and task.status != 'Завершена' %}
+                                        <form action="{% url 'close_task' task.pk %}" method="post" onsubmit="return confirm('Закрыть задачу?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">Закрыть</button>
+                                        </form>
+                                    {% endif %}
                                     <a href="{% url 'edit_task' task.pk %}" class="btn btn-secondary">Изменить</a>
                                     {% if request.user.can_delete_tasks %}
                                         <form action="{% url 'delete_task' task.pk %}" method="post" onsubmit="return confirm('Удалить задачу?');">
@@ -65,7 +73,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="empty-state">Задачи пока не заведены.</td>
+                            <td colspan="8" class="empty-state">Задачи пока не заведены.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

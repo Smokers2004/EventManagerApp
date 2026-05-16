@@ -4,17 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="Рабочее">
+    <list default="true" id="3c400581-52f4-42ea-bb6e-4500d92e6006" name="Changes" comment="почти финалочка">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/EventManagerApp/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/generated_reports/~$port_1_event_3.docx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/admin.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/forms.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/static/main/css/app.css" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/static/main/css/app.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employees.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/employees.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/event_detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/event_detail.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/events.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/mainpage.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/messages.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/messages.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/participants.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/participants.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/reports.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/tasks.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/templates/main/website_headers.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EventManagerApp/main/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EventManagerApp/main/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/EventManagerApp/main/views.py" afterDir="false" />
     </list>
@@ -22,6 +29,9 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExportToHTMLSettings">
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../EventManagerApp\exportToHTML" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -46,8 +56,10 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python tests.Python tests in tests.py.executor&quot;: &quot;Run&quot;,
     &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
     &quot;Python.manage.executor&quot;: &quot;Run&quot;,
+    &quot;Python.performance_test.executor&quot;: &quot;Run&quot;,
     &quot;Python.settings.executor&quot;: &quot;Debug&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
@@ -60,7 +72,7 @@
       <recent name="C:\Users\dopof\PycharmProjects\EventManagerApp\EventManagerApp\main" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.performance_test">
     <configuration name="manage" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="EventManagerApp" />
       <option name="ENV_FILES" value="" />
@@ -83,8 +95,31 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="performance_test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="EventManagerApp" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/EventManagerApp/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/EventManagerApp/scripts/performance_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.performance_test" />
         <item itemvalue="Python.manage" />
       </list>
     </recent_temporary>
@@ -145,12 +180,21 @@
       <option name="project" value="LOCAL" />
       <updated>1776539400931</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="почти финалочка">
+      <option name="closed" value="true" />
+      <created>1776544183950</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1776544183950</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="base" />
     <MESSAGE value="Рабочее" />
-    <option name="LAST_COMMIT_MESSAGE" value="Рабочее" />
+    <MESSAGE value="почти финалочка" />
+    <option name="LAST_COMMIT_MESSAGE" value="почти финалочка" />
   </component>
 </project>
