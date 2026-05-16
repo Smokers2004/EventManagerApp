@@ -1,0 +1,35 @@
+{% extends 'main/website_headers.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">{{ title }}</h1>
+            <p class="page-subtitle">Загрузите CSV со списком участников до начала мероприятия. Если заголовков нет, порядок колонок должен быть: ФИО, пол, телефон, почта. Посещение отмечается вручную после мероприятия.</p>
+        </div>
+        <a href="{% url 'participants' %}" class="btn btn-secondary">Назад к списку</a>
+    </section>
+
+    <section class="form-card panel">
+        <form method="post" enctype="multipart/form-data" class="field-grid">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="hint">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="errors">{{ field.errors|join:', ' }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="toolbar" style="grid-column:1 / -1;">
+                <button type="submit" class="btn btn-primary">Импортировать</button>
+                <a href="{% url 'participants' %}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

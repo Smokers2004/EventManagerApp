@@ -1,0 +1,303 @@
+{% extends 'main/website_headers.html' %}
+{% load static %}
+
+{% block title %}Аналитика{% endblock %}
+
+{% block content %}
+    <section class="page-head">
+        <div>
+            <h1 class="page-title">Аналитика</h1>
+            <p class="page-subtitle">Сводные показатели по доступным мероприятиям, сотрудникам и сформированным отчетам.</p>
+        </div>
+    </section>
+
+    <section class="dashboard-panel panel">
+        <div class="dashboard-panel-head">
+            <div>
+                <h2 class="panel-title">Параметры графиков</h2>
+                <span class="muted">Период и длительность применяются к визуализациям и таблицам.</span>
+            </div>
+        </div>
+        <form method="get" class="dashboard-filters">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <label>
+                <span>Период с</span>
+                <input type="date" name="date_from" value="{{ analytics_filters.date_from }}">
+            </label>
+            <label>
+                <span>Период по</span>
+                <input type="date" name="date_to" value="{{ analytics_filters.date_to }}">
+            </label>
+            <label>
+                <span>Длительность</span>
+                <select name="duration_group">
+                    <option value="">Все длительности</option>
+                    {% for group in duration_groups %}
+                        <option value="{{ group.key }}" {% if group.key == analytics_filters.duration_group %}selected{% endif %}>{{ group.label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="dashboard-filter-actions">
+                <button type="submit" class="btn btn-primary">Построить</button>
+                <a href="{% url 'analytics' %}?tab={{ active_tab }}" class="btn btn-secondary">Сбросить</a>
+            </div>
+        </form>
+
+        <div class="dashboard-metrics">
+            <article class="dashboard-metric">
+                <span>Мероприятия</span>
+                <strong>{{ dashboard_summary.events_count }}</strong>
+            </article>
+            <article class="dashboard-metric">
+                <span>Качество</span>
+                <strong>
+                    {% if dashboard_summary.avg_quality is not None %}
+                        {{ dashboard_summary.avg_quality|floatformat:3 }}
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                </strong>
+            </article>
+            <article class="dashboard-metric">
+                <span>Посещение</span>
+                <strong>
+                    {% if dashboard_summary.attendance_percent is not None %}
+                        {{ dashboard_summary.attendance_percent|floatformat:1 }}%
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                </strong>
+            </article>
+            <article class="dashboard-metric">
+                <span>Качество сотрудников</span>
+                <strong>
+                    {% if dashboard_summary.employee_quality is not None %}
+                        {{ dashboard_summary.employee_quality|floatformat:3 }}
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                </strong>
+            </article>
+        </div>
+    </section>
+
+    <nav class="analytics-tabs">
+        <a class="analytics-tab {% if active_tab == 'events' %}active{% endif %}" href="{% url 'analytics' %}?tab=events{% if filter_query %}&{{ filter_query }}{% endif %}">
+            <span>Мероприятия</span>
+            <strong>{{ event_rows|length }}</strong>
+        </a>
+        <a class="analytics-tab {% if active_tab == 'employees' %}active{% endif %}" href="{% url 'analytics' %}?tab=employees{% if filter_query %}&{{ filter_query }}{% endif %}">
+            <span>Сотрудники</span>
+            <strong>{{ employee_rows|length }}</strong>
+        </a>
+        <a class="analytics-tab {% if active_tab == 'reports' %}active{% endif %}" href="{% url 'analytics' %}?tab=reports{% if filter_query %}&{{ filter_query }}{% endif %}">
+            <span>Отчеты</span>
+            <strong>{{ reports|length }}</strong>
+        </a>
+    </nav>
+
+    {% if active_tab == 'events' %}
+        <section class="dashboard-grid">
+            <article class="chart-panel chart-panel-highlight panel">
+                <div class="chart-head">
+                    <h2 class="panel-title">Качество мероприятий по датам</h2>
+                    <span class="muted">{{ analytics_filters.duration_group_label }}</span>
+                </div>
+                <div class="chart-canvas-shell chart-canvas-shell-large">
+                    {% if quality_chart %}
+                        <canvas id="eventQualityChart" aria-label="График качества мероприятий по датам" role="img"></canvas>
+                    {% else %}
+                        <div class="empty-state compact">Нет мероприятий с датой для выбранного периода.</div>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="chart-panel panel">
+                <div class="chart-head">
+                    <h2 class="panel-title">Группы по длительности</h2>
+                </div>
+                <div class="chart-canvas-shell">
+                    <canvas id="durationGroupChart" aria-label="Диаграмма группировки мероприятий по длительности" role="img"></canvas>
+                </div>
+            </article>
+        </section>
+
+        <section class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Мероприятие</th>
+                            <th>Дата</th>
+                            <th>Длительность</th>
+                            <th>Статус</th>
+                            <th>Участники</th>
+                            <th>Посещение</th>
+                            <th>Задачи</th>
+                            <th>В срок</th>
+                            <th>Отзывы</th>
+                            <th>Средняя оценка</th>
+                            <th>План</th>
+                            <th>Факт</th>
+                            <th>Отклонение</th>
+                            <th>Качество мероприятия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in event_rows %}
+                            <tr>
+                                <td><strong><a href="{% url 'event_detail' row.event.pk %}">{{ row.event.title }}</a></strong></td>
+                                <td>{{ row.event_date }}</td>
+                                <td>
+                                    <span class="badge">{{ row.duration_group_label }}</span>
+                                    {% if row.duration_hours is not None %}
+                                        <div class="muted">{{ row.duration_hours|floatformat:1 }} ч.</div>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge">{{ row.event.status }}</span></td>
+                                <td>{{ row.participants_count }}</td>
+                                <td>{{ row.attended_count }} / {{ row.participants_count }}</td>
+                                <td>{{ row.completed_tasks_count }} / {{ row.tasks_count }}</td>
+                                <td>{{ row.on_time_tasks_percent }}%</td>
+                                <td>{{ row.feedback_count }}</td>
+                                <td>{{ row.avg_rating }}</td>
+                                <td>{{ row.planned_budget|floatformat:2 }} руб.</td>
+                                <td>{{ row.expense_total|floatformat:2 }} руб.</td>
+                                <td>
+                                    {% if row.budget_deviation_percent is not None %}
+                                        {{ row.budget_deviation_percent|floatformat:2 }}%
+                                    {% else %}
+                                        Н/Д
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ row.quality_score|floatformat:3 }}</strong></td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="14" class="empty-state">Нет доступных мероприятий для выбранных условий.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% elif active_tab == 'employees' %}
+        <section class="chart-panel chart-panel-highlight panel">
+            <div class="chart-head">
+                <h2 class="panel-title">Качество работы сотрудников по месяцам</h2>
+            </div>
+            <div class="chart-canvas-shell chart-canvas-shell-large">
+                {% if employee_quality_chart %}
+                    <canvas id="employeeQualityChart" aria-label="График качества работы сотрудников по месяцам" role="img"></canvas>
+                {% else %}
+                    <div class="empty-state compact">Нет завершенных мероприятий с ответственными сотрудниками для выбранного периода.</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Сотрудник</th>
+                            <th>Роль</th>
+                            <th>Мероприятия</th>
+                            <th>Задачи</th>
+                            <th>Завершенные задачи</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in employee_rows %}
+                            <tr>
+                                <td><strong>{{ row.employee.fullname|default:row.employee.login }}</strong></td>
+                                <td><span class="badge">{{ row.employee.role_label }}</span></td>
+                                <td>{{ row.events_count }}</td>
+                                <td>{{ row.tasks_count }}</td>
+                                <td>{{ row.completed_tasks_count }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty-state">Нет сотрудников, привязанных к выбранным мероприятиям.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% elif active_tab == 'reports' %}
+        {% if request.user.can_generate_reports %}
+            <section class="form-card panel" style="margin-bottom: 24px;">
+                <h2 class="panel-title">Сформировать новый отчет</h2>
+                <div class="stack">
+                    {% for event in events %}
+                        <div class="report-event-row">
+                            <div>
+                                <strong>{{ event.title }}</strong>
+                                <div class="muted" style="margin-top:6px;">{{ event.time|default:"Дата не указана" }}</div>
+                            </div>
+                            <div class="toolbar">
+                                <form action="{% url 'generate_report' event.pk 'event' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">Отчет о мероприятии</button>
+                                </form>
+                                <form action="{% url 'generate_report' event.pk 'expense' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary">Отчет о расходах</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="empty-state">Для генерации отчета нужно сначала создать мероприятие.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Мероприятие</th>
+                            <th>Тип</th>
+                            <th>Файл</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                            <tr>
+                                <td>{{ report.rep_id }}</td>
+                                <td>{{ report.event.title }}</td>
+                                <td><span class="badge">{{ report.type }}</span></td>
+                                <td>
+                                    <a href="{% url 'download_report' report.pk %}">{{ report.rep_path }}</a>
+                                </td>
+                                <td>
+                                    {% if request.user.can_generate_reports %}
+                                        <form action="{% url 'delete_report' report.pk %}" method="post" onsubmit="return confirm('Удалить отчет из системы и с компьютера?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty-state">Отчеты еще не сформированы.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+    {{ analytics_chart_data|json_script:"analytics-chart-data" }}
+    <script src="{% static 'main/vendor/chartjs/chart.umd.min.js' %}"></script>
+    <script src="{% static 'main/js/analytics_charts.js' %}"></script>
+{% endblock %}
